@@ -152,13 +152,12 @@ export const CategoryBrowser = ({ allowedCategories, onFileSelect }: CategoryBro
             return (
               <Button
                 key={category.value}
-                variant="outline"
                 className="h-auto p-3 flex flex-col items-center space-y-1"
                 onClick={() => setSelectedCategory(category.value)}
               >
                 <FolderOpen className="h-4 w-4" />
                 <span className="text-xs font-medium">{category.label}</span>
-                <Badge variant="secondary" className="text-xs">
+                <Badge className="text-xs">
                   {fileCount} files
                 </Badge>
               </Button>
@@ -173,7 +172,7 @@ export const CategoryBrowser = ({ allowedCategories, onFileSelect }: CategoryBro
               Files ({filteredFiles.length})
             </h3>
             {searchTerm && (
-              <Badge variant="outline">
+              <Badge>
                 Search: "{searchTerm}"
               </Badge>
             )}
@@ -212,20 +211,19 @@ export const CategoryBrowser = ({ allowedCategories, onFileSelect }: CategoryBro
                       </div>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                        <Button
+                        className="variant-ghost"
                         onClick={() => onFileSelect(file)}
-                      >
+                        >
                         <Eye className="h-4 w-4" />
-                      </Button>
+                        </Button>
                       <Button
-                        variant="ghost"
-                        size="sm"
+                        className="variant-ghost"
                         onClick={() => onFileSelect(file)}
                       >
                         <Download className="h-4 w-4" />
                       </Button>
+
                     </div>
                   </div>
                 );
