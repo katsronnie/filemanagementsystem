@@ -67,12 +67,18 @@ export const getFilesByDate = async (
   return response.data;
 };
 
-export const uploadFile = async (formData: FormData): Promise<{ message: string; file: FileData }> => {
-  const response = await api.post('/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+export const uploadFile = async (uploadData: {
+  filename: string;
+  fileContent: string;
+  category: string;
+  year: string;
+  month: string;
+  date: string;
+  description?: string;
+  mimetype: string;
+  filesize: number;
+}): Promise<{ message: string; file: FileData & { publicUrl: string } }> => {
+  const response = await api.post('/upload', uploadData);
   return response.data;
 };
 
@@ -162,4 +168,91 @@ export const deleteUser = async (userId: string): Promise<{ message: string }> =
   return response.data;
 };
 
-export default api; 
+export default api;
+
+// Dashboard Statistics API
+export interface DashboardStats {
+  totalFiles: number;
+  totalUsers: number;
+  todayUsers: number;
+  storageUsage: {
+    totalSize: number;
+    averageSize: number;
+    fileCount: number;
+  };
+  categoryCounts: Record<string, number>;
+  recentFiles: FileData[];
+  todayUsersList: TodayUser[];
+}
+
+export interface TodayUser {
+  id: string;
+  email: string;
+  last_sign_in_at: string;
+  created_at: string;
+}
+
+// Get total file count
+export const getTotalFiles = async (): Promise<number> => {
+  const response = await api.get('/stats/files/total');
+  return response.data.totalFiles;
+};
+
+// Get files by category
+export const getFilesByCategory = async (): Promise<Record<string, number>> => {
+  const response = await api.get('/stats/files/by-category');
+  return response.data;
+};
+
+// Get recent file uploads
+export const getRecentFiles = async (): Promise<FileData[]> => {
+  const response = await api.get('/stats/files/recent');
+  return response.data;
+};
+
+// Get users who logged in today
+export const getTodayUsers = async (): Promise<{ count: number; users: TodayUser[] }> => {
+  const response = await api.get('/stats/users/today');
+  return response.data;
+};
+
+// Get total user count
+export const getTotalUsers = async (): Promise<number> => {
+  const response = await api.get('/stats/users/total');
+  return response.data.totalUsers;
+};
+
+// Get storage usage statistics
+export const getStorageStats = async (): Promise<{ totalSize: number; averageSize: number; fileCount: number }> => {
+  const response = await api.get('/stats/storage');
+  return response.data;
+};
+
+// Get all dashboard statistics
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  const [
+    totalFiles,
+    totalUsers,
+    todayUsersData,
+    storageStats,
+    categoryCounts,
+    recentFiles
+  ] = await Promise.all([
+    getTotalFiles(),
+    getTotalUsers(),
+    getTodayUsers(),
+    getStorageStats(),
+    getFilesByCategory(),
+    getRecentFiles()
+  ]);
+
+  return {
+    totalFiles,
+    totalUsers,
+    todayUsers: todayUsersData.count,
+    storageUsage: storageStats,
+    categoryCounts,
+    recentFiles,
+    todayUsersList: todayUsersData.users // Add this for the dialog
+  };
+}; 

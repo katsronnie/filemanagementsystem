@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
@@ -11,52 +10,33 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increase limit here
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Supabase configuration
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Multer configuration for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const { category, year, month, date } = req.body;
-    const uploadPath = path.join(__dirname, 'uploads', category, year, month, date);
-    
-    // Create directory if it doesn't exist
-    fs.mkdirSync(uploadPath, { recursive: true });
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage: storage });
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
 // Routes
 
-// Get all categories
+// Get categories
 app.get('/api/categories', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data: categories, error } = await supabase
       .from('categories')
       .select('*')
       .order('name');
     
-    if (error) throw error;
-    res.json(data);
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+
+    res.json(categories || []);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in /api/categories:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -81,41 +61,68 @@ app.get('/api/files/:category/:year/:month/:date', async (req, res) => {
   }
 });
 
-// Upload file
-app.post('/api/upload', upload.single('file'), async (req, res) => {
+// Upload file to Supabase Storage
+app.post('/api/upload', async (req, res) => {
   try {
-    const { category, year, month, date, description } = req.body;
-    const file = req.file;
+    const { category, year, month, date, description, filename, fileContent, mimetype, filesize } = req.body;
     
-    if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+    if (!filename || !fileContent || !category || !year || !month || !date) {
+      return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // Convert base64 file content back to buffer
+    const fileBuffer = Buffer.from(fileContent, 'base64');
     
-    // Save file info to Supabase
-    const { data, error } = await supabase
+    // Create file path in Supabase Storage
+    const filePath = `${category}/${year}/${month}/${date}/${filename}`;
+    
+    // Upload file to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('uploads')
+      .upload(filePath, fileBuffer, {
+        contentType: mimetype,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
+
+    // Get public URL for the uploaded file
+    const { data: urlData } = supabase.storage
+      .from('uploads')
+      .getPublicUrl(filePath);
+
+    // Save file metadata to database
+    const { data: dbData, error: dbError } = await supabase
       .from('files')
       .insert([
         {
-          filename: file.originalname,
-          filepath: file.path,
+          filename: filename,
+          filepath: filePath,
           category: category,
           year: year,
           month: month,
           date: date,
           description: description,
-          filesize: file.size,
-          mimetype: file.mimetype
+          filesize: filesize,
+          mimetype: mimetype
         }
       ])
       .select();
     
-    if (error) throw error;
+    if (dbError) throw dbError;
     
     res.json({
       message: 'File uploaded successfully',
-      file: data[0]
+      file: {
+        ...dbData[0],
+        publicUrl: urlData.publicUrl
+      }
     });
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -170,6 +177,16 @@ app.delete('/api/files/:id', async (req, res) => {
     
     if (fetchError) throw fetchError;
     
+    // Delete from Supabase Storage
+    const { error: storageError } = await supabase.storage
+      .from('uploads')
+      .remove([fileData.filepath]);
+    
+    if (storageError) {
+      console.error('Storage delete error:', storageError);
+      // Continue with database deletion even if storage deletion fails
+    }
+    
     // Delete from database
     const { error: deleteError } = await supabase
       .from('files')
@@ -178,12 +195,160 @@ app.delete('/api/files/:id', async (req, res) => {
     
     if (deleteError) throw deleteError;
     
-    // Delete physical file
-    if (fs.existsSync(fileData.filepath)) {
-      fs.unlinkSync(fileData.filepath);
-    }
-    
     res.json({ message: 'File deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
+});
+
+// Dashboard Statistics Endpoints
+
+// Get total file count
+app.get('/api/stats/files/total', async (req, res) => {
+  try {
+    const { count, error } = await supabase
+      .from('files')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) throw error;
+    res.json({ totalFiles: count || 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get files by category for dashboard
+app.get('/api/stats/files/by-category', async (req, res) => {
+  try {
+    // First get all categories
+    const { data: categories, error: categoriesError } = await supabase
+      .from('categories')
+      .select('name')
+      .order('name');
+
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+      return res.status(500).json({ error: 'Failed to fetch categories' });
+    }
+
+    // Then get file counts for each category
+    const { data: files, error: filesError } = await supabase
+      .from('files')
+      .select('category');
+
+    if (filesError) {
+      console.error('Error fetching files:', filesError);
+      return res.status(500).json({ error: 'Failed to fetch files' });
+    }
+
+    // Count files per category
+    const categoryCounts = {};
+    categories.forEach(cat => {
+      categoryCounts[cat.name] = 0;
+    });
+
+    files.forEach(file => {
+      if (categoryCounts.hasOwnProperty(file.category)) {
+        categoryCounts[file.category]++;
+      }
+    });
+
+    res.json(categoryCounts);
+  } catch (error) {
+    console.error('Error in /api/stats/files/by-category:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get recent file uploads (last 7 days)
+app.get('/api/stats/files/recent', async (req, res) => {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const { data, error } = await supabase
+      .from('files')
+      .select('*')
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get users who logged in today
+app.get('/api/stats/users/today', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const { data, error } = await supabase.auth.admin.listUsers();
+    
+    if (error) throw error;
+    
+    // Filter users who logged in today
+    const todayUsers = data.users.filter(user => {
+      if (!user.last_sign_in_at) return false;
+      const lastSignIn = new Date(user.last_sign_in_at);
+      return lastSignIn >= today;
+    });
+    
+    // Return user details (without sensitive info)
+    const userDetails = todayUsers.map(user => ({
+      id: user.id,
+      email: user.email,
+      last_sign_in_at: user.last_sign_in_at,
+      created_at: user.created_at
+    }));
+    
+    res.json({
+      count: todayUsers.length,
+      users: userDetails
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get total user count
+app.get('/api/stats/users/total', async (req, res) => {
+  try {
+    const { data, error } = await supabase.auth.admin.listUsers();
+    
+    if (error) throw error;
+    
+    res.json({ totalUsers: data.users.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get storage usage statistics
+app.get('/api/stats/storage', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('files')
+      .select('filesize');
+    
+    if (error) throw error;
+    
+    const totalSize = data.reduce((sum, file) => sum + (file.filesize || 0), 0);
+    const averageSize = data.length > 0 ? totalSize / data.length : 0;
+    
+    res.json({
+      totalSize,
+      averageSize,
+      fileCount: data.length
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -310,11 +475,6 @@ app.put('/api/admin/users/:userId', isAdmin, async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
 });
 
 app.listen(PORT, () => {

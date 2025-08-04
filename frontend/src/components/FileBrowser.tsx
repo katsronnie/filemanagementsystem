@@ -96,6 +96,45 @@ const FileBrowser: React.FC = () => {
     }
   };
 
+  const handleDownloadFile = (file: FileData) => {
+    try {
+      // If the file has a publicUrl, use it directly
+      if ('publicUrl' in file && file.publicUrl) {
+        window.open(file.publicUrl as string, '_blank');
+        return;
+      }
+      
+      // Fallback: construct the URL from the filepath
+      const supabaseUrl = 'https://dosjuatlsvfwyqftniad.supabase.co';
+      const storageUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${file.filepath}`;
+      window.open(storageUrl, '_blank');
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error('Failed to download file');
+    }
+  };
+
+  const handleViewFile = (file: FileData) => {
+    try {
+      // For PDFs and images, open in new tab
+      if (file.mimetype?.includes('pdf') || file.mimetype?.includes('image')) {
+        if ('publicUrl' in file && file.publicUrl) {
+          window.open(file.publicUrl as string, '_blank');
+        } else {
+          const supabaseUrl = 'https://dosjuatlsvfwyqftniad.supabase.co';
+          const storageUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${file.filepath}`;
+          window.open(storageUrl, '_blank');
+        }
+      } else {
+        // For other file types, trigger download
+        handleDownloadFile(file);
+      }
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      toast.error('Failed to view file');
+    }
+  };
+
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(category)) {
@@ -327,11 +366,11 @@ const FileBrowser: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleViewFile(file)}>
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleDownloadFile(file)}>
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </Button>
