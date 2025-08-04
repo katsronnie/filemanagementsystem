@@ -4,8 +4,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "./Layout/Header";
 import { LoginForm } from "./Auth/LoginForm";
 import { DashboardStats } from "./Dashboard/DashboardStats";
-import { UploadZone } from "./FileUpload/UploadZone";
-import { CategoryBrowser } from "./FileManager/CategoryBrowser";
+import { UserManagement } from "./Admin/UserManagement";
+import FileUpload from "./FileUpload";
+import FileBrowser from "./FileBrowser";
 
 interface User {
   email: string;
@@ -121,10 +122,13 @@ export const FileManagementApp = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={`grid w-full ${currentUser.role === 'admin' ? 'grid-cols-4' : 'grid-cols-3'}`}>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="upload">Upload Files</TabsTrigger>
             <TabsTrigger value="browse">Browse Files</TabsTrigger>
+            {currentUser.role === 'admin' && (
+              <TabsTrigger value="users">User Management</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -135,18 +139,18 @@ export const FileManagementApp = () => {
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-6">
-            <UploadZone 
-              allowedCategories={currentUser.allowedCategories}
-              onUpload={handleFileUpload}
-            />
+            <FileUpload />
           </TabsContent>
 
           <TabsContent value="browse" className="space-y-6">
-            <CategoryBrowser 
-              allowedCategories={currentUser.allowedCategories}
-              onFileSelect={handleFileSelect}
-            />
+            <FileBrowser />
           </TabsContent>
+
+          {currentUser.role === 'admin' && (
+            <TabsContent value="users" className="space-y-6">
+              <UserManagement />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

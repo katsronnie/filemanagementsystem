@@ -5,25 +5,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Lock } from "lucide-react";
+import { supabase } from '../../lib/supabaseClient';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => void;
 }
 
+
 export const LoginForm = ({ onLogin }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
+    setErrorMsg(null);
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
       onLogin(email, password);
-      setIsLoading(false);
-    }, 1000);
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -80,6 +86,9 @@ export const LoginForm = ({ onLogin }: LoginFormProps) => {
                   </>
                 )}
               </Button>
+              {errorMsg && (
+                <div className="text-red-500 text-sm text-center">{errorMsg}</div>
+              )}
             </form>
             
             <div className="mt-6 pt-6 border-t">
