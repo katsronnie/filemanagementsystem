@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFile - File Management System</title>
+    <link rel="stylesheet" href="{% static 'css/user.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div>
+            <div class="navbar-brand">
+                <div class="icon">📁</div>
+                MedFile
+            </div>
+            <div class="navbar-subtitle">File Management System</div>
+        </div>
+        <div class="navbar-right">
+            <div class="admin-badge">Administrator</div>
+            <div class="user-avatar">D</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>File Management Dashboard</h1>
+            <p>Full system access - manage all medical categories</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <!-- In your tab navigation section -->
+<div class="tab-nav">
+    <a href="{% url 'dashboard' %}" class="tab-btn {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-tab="dashboard">Dashboard</a>
+    <a href="{% url 'upload' %}" class="tab-btn {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" data-tab="upload">Upload Files</a>
+    <a href="{% url 'file_browser' %}" class="tab-btn {% if request.resolver_match.url_name == 'file_browser' %}active{% endif %}" data-tab="browse">Browse Files</a>
+    <a href="{% url 'usermanagement' %}" class="tab-btn {% if request.resolver_match.url_name == 'usermanagement' %}active{% endif %}" data-tab="users">User Management</a>
+    <a href="{% url 'categories' %}" class="tab-btn {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" data-tab="categories">Categories</a>
+</div>
+
+        <!-- User Management Section -->
+        <div class="user-management">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span>👥</span>
+                        <h2>User Management</h2>
+                    </div>
+                    <div class="section-subtitle">Manage system users and their access permissions</div>
+                </div>
+                <button class="add-user-btn" onclick="openAddUserModal()">
+                    <span>+</span>
+                    Add User
+                </button>
+            </div>
+
+            <!-- Users Table -->
+            <table>
+    <thead>
+        <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Staff Status</th>
+            <th>Is Approved</th>
+            <th>Last Sign In</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <!-- In your table body -->
+    <tbody id="usersTableBody">
+        {% for user in users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.department }}</td>
+            <td>
+                {% if user.is_staff %}
+                    <span class="status-badge" style="background-color: #3b82f6;">Staff</span>
+                {% else %}
+                    <span class="status-badge" style="background-color: #64748b;">Regular</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if user.is_approved %}
+                    <span class="status-badge" style="background-color: #22c55e;">Approved</span>
+                {% else %}
+                    <span class="status-badge" style="background-color: #ef4444;">Pending</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if user.login != "Never" %}
+                    {{ user.login }}
+                {% else %}
+                    Never
+                {% endif %}
+            </td>
+            <td>
+                <div class="actions">
+                    <button class="action-btn edit-btn" onclick="editUser('{{ user.username }}')">✏️</button>
+                    <button class="action-btn delete-btn" onclick="deleteUser('{{ user.username }}')">🗑️</button>
+                </div>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" style="text-align:center;">No users found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <button class="close-btn" onclick="closeAddUserModal()">&times;</button>
+            </div>
+            <form id="addUserForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="userUsername">Username</label>
+                    <input type="text" id="userUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="userEmail">Email Address</label>
+                    <input type="email" id="userEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="userPassword">Password</label>
+                    <input type="password" id="userPassword" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="userDepartment">Department</label>
+                    <select id="userDepartment" name="department" required>
+                        <option value="" disabled selected>Select Department</option>
+                        {% for department in departments %}
+                        <option value="{{ department.code }}">{{ department.name }}</option>
+                        {% empty %}
+                            {% for code, name in department_choices %}
+                            <option value="{{ code }}">{{ name }}</option>
+                            {% endfor %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="userIsStaff" name="is_staff">
+                        Staff Member (can access admin site)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="userIsApproved" name="is_approved" checked>
+                        Approved (can log in)
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddUserModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+    <script src="{% static 'js/user.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFile - File Management System</title>
+    <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-icon">📁</div>
+            <span>MedFile</span>
+            <span style="font-size: 0.875rem; opacity: 0.8;">File Management System</span>
+        </div>
+        <div class="user-section">
+            <div class="user-badge">Administrator</div>
+            <div class="user-avatar">D</div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>File Management Dashboard</h1>
+            <p>Full system access - manage all medical categories</p>
+        </div>
+
+        <div class="tab-nav">
+            <a href="{% url 'dashboard' %}" class="tab-btn {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-tab="dashboard">Dashboard</a>
+            <a href="{% url 'upload' %}" class="tab-btn {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" data-tab="upload">Upload Files</a>
+            <a href="{% url 'file_browser' %}" class="tab-btn {% if request.resolver_match.url_name == 'file_browser' %}active{% endif %}" data-tab="browse">Browse Files</a>
+            <a href="{% url 'usermanagement' %}" class="tab-btn {% if request.resolver_match.url_name == 'usermanagement' %}active{% endif %}" data-tab="users">User Management</a>
+            <a href="{% url 'categories' %}" class="tab-btn {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" data-tab="categories">Categories</a>
+        </div>
+
+        <div class="main-card">
+            <div class="card-header">
+                <div class="card-icon">📤</div>
+                <div>
+                    <div class="card-title">File Upload & Scanning</div>
+                    <div class="card-subtitle">Upload files or scan documents and organize them by category and date</div>
+                </div>
+            </div>
+
+            <div class="upload-tabs">
+                <div class="upload-tab active" data-tab="upload">
+                    <div class="upload-tab-icon">📁</div>
+                    <span>Upload File</span>
+                </div>
+                <div class="upload-tab" data-tab="scan">
+                    <div class="upload-tab-icon">🖨️</div>
+                    <span>Scan Document</span>
+                </div>
+            </div>
+
+            <div id="message" class="message"></div>
+
+            <!-- Upload Form Content -->
+            <div id="uploadContent" class="form-content active">
+                {% if success %}
+                <div style="background-color: #d1fae5; color: #065f46; border: 1px solid #10b981; padding: 10px; border-radius: 5px; margin-bottom: 1em;">
+                    ✅ {{ success }}
+                </div>
+                {% endif %}
+
+                {% if error %}
+                <div style="background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; padding: 10px; border-radius: 5px; margin-bottom: 1em;">
+                    ❌ {{ error }}
+                </div>
+                {% endif %}
+                <div class="form-container">
+                    <form id="uploadForm" method="POST" enctype="multipart/form-data" action="{% url 'upload' %}">
+                        {% csrf_token %}
+                        
+                        <!-- File Upload -->
+                        <div class="form-group">
+                            <label class="form-label">File</label>
+                            <div class="file-input-container" id="fileDropZone">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+                                <div><strong>Choose File</strong> or drag and drop</div>
+                                <div class="file-input-text">No file chosen</div>
+                                <input type="file" id="fileInput" name="file" class="file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt">
+                            </div>
+                            <div id="filePreview" class="file-preview">
+                                <div class="file-info">
+                                    <div>
+                                        <div class="file-name" id="fileName"></div>
+                                        <div class="file-size" id="fileSize"></div>
+                                    </div>
+                                    <button type="button" class="remove-file" id="removeFile">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="category" name="category" required>
+                                <option value="">Select a category</option>
+                                {% for category in categories %}
+                                <option value="{{ category.name }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Date Fields -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Year</label>
+                                <select class="form-select" id="year" name="year" required>
+                                    <option value="">Year</option>
+                                    {% for year in year_range %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Month</label>
+                                <select class="form-select" id="month" name="month" required>
+                                    <option value="">Month</option>
+                                    <option value="01">January</option>
+                                    <option value="02">February</option>
+                                    <option value="03">March</option>
+                                    <option value="04">April</option>
+                                    <option value="05">May</option>
+                                    <option value="06">June</option>
+                                    <option value="07">July</option>
+                                    <option value="08">August</option>
+                                    <option value="09">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date</label>
+                                <select class="form-select" id="date" name="date" required>
+                                    <option value="">Date</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Select Date</label>
+                                <input type="date" class="form-input" id="dateInput" name="date_input">
+                            </div>
+                        </div>
+
+                        <div id="scannerSettings" style="display: none; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            <h3 style="margin-bottom: 15px;">Scanner Settings</h3>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <!-- Scanner Selection -->
+                                <div class="form-group">
+                                    <label class="form-label">Scanner</label>
+                                    <select class="form-select" id="scannerSelect">
+                                        <option value="">Loading scanners...</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- DPI Settings -->
+                                <div class="form-group">
+                                    <label class="form-label">Resolution (DPI)</label>
+                                    <select class="form-select" id="dpiSelect">
+                                        <option value="150">150 DPI</option>
+                                        <option value="300" selected>300 DPI</option>
+                                        <option value="600">600 DPI</option>
+                                        <option value="1200">1200 DPI</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Color Mode -->
+                                <div class="form-group">
+                                    <label class="form-label">Color Mode</label>
+                                    <select class="form-select" id="colorModeSelect">
+                                        <option value="Color">Color</option>
+                                        <option value="Grayscale">Grayscale</option>
+                                        <option value="BlackAndWhite">Black & White</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Page Size -->
+                                <div class="form-group">
+                                    <label class="form-label">Page Size</label>
+                                    <select class="form-select" id="pageSizeSelect">
+                                        <option value="A4">A4</option>
+                                        <option value="Letter">Letter</option>
+                                        <option value="Legal">Legal</option>
+                                        <option value="Custom">Custom</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Additional Options -->
+                                <div class="form-group">
+                                    <label class="form-label">Options</label>
+                                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                                        <label style="display: flex; align-items: center; gap: 8px;">
+                                            <input type="checkbox" id="autoDeskewCheck" checked>
+                                            Auto Deskew/Rotate
+                                        </label>
+                                        <label style="display: flex; align-items: center; gap: 8px;">
+                                            <input type="checkbox" id="multiPageCheck">
+                                            Multi-page Scan
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden field for scan data -->
+                        <input type="hidden" id="scanData" name="scan_data">
+                        <input type="hidden" id="scanFileName" name="scan_file_name" value="scanned_document.pdf">
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn" name="upload_type" value="file">
+                            <span>📤</span>
+                            Upload File
+                        </button>
+
+                        <!-- Scan Button -->
+                        <button type="button" id="scanButton" class="submit-btn" style="margin-top: 10px; background: linear-gradient(135deg, #4f46e5, #7c3aed);">
+                            <span>🖨️</span> Scan Document Instead
+                        </button>
+                        <button type="button" id="addPageButton" class="submit-btn" style="margin-top: 10px; background: linear-gradient(135deg, #10b981, #047857);">
+                        ➕ Add Page to Document
+                        </button>
+
+                        <button type="button" id="previewButton" class="submit-btn" style="margin-top: 10px; background: linear-gradient(135deg, #2563eb, #1e40af);">
+                        👁️ Preview Document
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Scanned Documents List -->
+                <div class="scanned-documents" id="scannedDocumentsContainer">
+                    <div class="scanned-documents-title">Scanned Documents</div>
+                    <div class="scanned-documents-list" id="scannedDocumentsList">
+                        <!-- Scanned documents will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div class="modal" id="renameModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Rename Scanned Document</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">File Name</label>
+                    <input type="text" class="form-input" id="renameInput" placeholder="Enter new file name (without extension)">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn secondary" id="cancelRename">Cancel</button>
+                <button type="button" class="modal-btn primary" id="confirmRename">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCAN_URL = "{% url 'scan_document' %}";
+        const GET_SCANNERS_URL = "{% url 'get_scanners' %}";
+        
+    </script>
+    <script src="{% static 'js/upload.js' %}"></script>
+</body>
+</html>

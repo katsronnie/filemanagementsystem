@@ -1,0 +1,15 @@
+# Additional requirements for PDF scanning functionality
+
+# Image processing
+Pillow>=9.0.0
+
+# PDF generation
+reportlab>=3.6.0
+
+# Web-based scanning (optional)
+# For advanced scanner integration, consider:
+# - python-escpos (for thermal printers with scanning)
+# - opencv-python (for advanced image processing)
+# - pytesseract (for OCR functionality)
+
+# Install with: pip install -r scanner_requirements.txt

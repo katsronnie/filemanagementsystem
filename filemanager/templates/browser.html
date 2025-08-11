@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFile - File Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            gap: 0.25rem;
+        }
+        .tab-nav a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* Ensure hover states maintain the design */
+        .tab-nav a:hover {
+            text-decoration: none;
+        }
+
+        /* Active tab styling remains the same */
+        .tab-nav a.active {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f8fafc;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .navbar-brand .icon {
+            width: 32px;
+            height: 32px;
+            background-color: #3b82f6;
+            border-radius: 6px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .navbar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-left: 42px;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-badge {
+            background-color: #3b82f6;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 2rem;
+            gap: 2rem;
+        }
+
+        .nav-tab {
+            padding: 1rem 0;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: #6b7280;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover {
+            color: #3b82f6;
+        }
+
+        .nav-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        /* File Browser Section */
+        .file-browser {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+        }
+
+        .section-subtitle {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Filters Section */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 2;
+            min-width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .apply-filters {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            align-self: flex-end;
+        }
+
+        .apply-filters:hover {
+            background-color: #2563eb;
+        }
+
+        /* Files Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .file-icon {
+            width: 40px;
+            height: 40px;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: #3b82f6;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .file-meta {
+            color: #6b7280;
+            font-size: 0.75rem;
+        }
+
+        .file-category {
+            background-color: #f0fdf4;
+            color: #16a34a;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .file-size {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .download-btn {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .download-btn:hover {
+            background-color: #dcfce7;
+        }
+
+        .preview-btn {
+            background-color: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .preview-btn:hover {
+            background-color: #dbeafe;
+        }
+
+        .delete-btn {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .delete-btn:hover {
+            background-color: #fee2e2;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            gap: 0.5rem;
+        }
+
+        .page-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .page-btn:hover {
+            background: #f3f4f6;
+        }
+
+        .page-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #3b82f6;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Clear filters button */
+        .clear-filters {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            margin-left: auto;
+        }
+
+        .clear-filters:hover {
+            background-color: #e5e7eb;
+        }
+
+        /* Page ellipsis in pagination */
+        .page-ellipsis {
+            display: flex;
+            align-items: center;
+            padding: 0 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .nav-tabs {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .table-container {
+                font-size: 0.875rem;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .apply-filters {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div>
+            <div class="navbar-brand">
+                <div class="icon">📁</div>
+                MedFile
+            </div>
+            <div class="navbar-subtitle">File Management System</div>
+        </div>
+        <div class="navbar-right">
+            <div class="admin-badge">Administrator</div>
+            <div class="user-avatar">D</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>File Management Dashboard</h1>
+            <p>Full system access - browse all medical files</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tab-nav">
+            <a href="{% url 'dashboard' %}" class="tab-btn {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-tab="dashboard">Dashboard</a>
+            <a href="{% url 'upload' %}" class="tab-btn {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" data-tab="upload">Upload Files</a>
+            <a href="{% url 'file_browser' %}" class="tab-btn {% if request.resolver_match.url_name == 'file_browser' %}active{% endif %}" data-tab="browse">Browse Files</a>
+            <a href="{% url 'usermanagement' %}" class="tab-btn {% if request.resolver_match.url_name == 'usermanagement' %}active{% endif %}" data-tab="users">User Management</a>
+            <a href="{% url 'categories' %}" class="tab-btn {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" data-tab="categories">Categories</a>
+        </div>
+
+        <!-- File Browser Section -->
+        <div class="file-browser">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span>📂</span>
+                        <h2>Browse Files</h2>
+                    </div>
+                    <div class="section-subtitle">Search and filter medical files by category, date, and other criteria</div>
+                </div>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="filters">
+    <div class="filter-group">
+        <label for="category">Category</label>
+        <select id="category">
+            <option value="">All Categories</option>
+            {% for category in categories %}
+            <option value="{{ category.name }}">{{ category.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="year">Year</label>
+        <select id="year">
+            <option value="">All Years</option>
+            {% for year in years %}
+            <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="month">Month</label>
+        <select id="month" disabled>
+            <option value="">All Months</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+             <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+        </select>
+    </div>
+    
+    <div class="filter-group">
+        <label for="date">Date</label>
+        <input type="date" id="date" disabled>
+    </div>
+    
+    <div class="search-box">
+        <label for="search">Search</label>
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Search by file name or description...">
+    </div>
+    
+    <button class="apply-filters">Apply Filters</button>
+</div>
+
+            <!-- Files Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Category</th>
+                            <th>Uploaded</th>
+                            <th>Size</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon">📄</div>
+                                    <div>
+                                        <div class="file-name">Patient_Record_001.pdf</div>
+                                        <div class="file-meta">PID: PT-2025-001 • Dr. Smith</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="file-category">Gynecology</span></td>
+                            <td>05/08/2025</td>
+                            <td class="file-size">2.4 MB</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn preview-btn" title="Preview">👁️</button>
+                                    <button class="action-btn download-btn" title="Download">⬇️</button>
+                                    <button class="action-btn delete-btn" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon">📊</div>
+                                    <div>
+                                        <div class="file-name">Lab_Results_042.xlsx</div>
+                                        <div class="file-meta">PID: PT-2025-042 • Lab Tech</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="file-category">Pharmacy</span></td>
+                            <td>04/08/2025</td>
+                            <td class="file-size">1.7 MB</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn preview-btn" title="Preview">👁️</button>
+                                    <button class="action-btn download-btn" title="Download">⬇️</button>
+                                    <button class="action-btn delete-btn" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon">🖼️</div>
+                                    <div>
+                                        <div class="file-name">XRay_Scan_018.png</div>
+                                        <div class="file-meta">PID: PT-2025-018 • Radiology</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="file-category">Radiology</span></td>
+                            <td>03/08/2025</td>
+                            <td class="file-size">5.2 MB</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn preview-btn" title="Preview">👁️</button>
+                                    <button class="action-btn download-btn" title="Download">⬇️</button>
+                                    <button class="action-btn delete-btn" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon">📄</div>
+                                    <div>
+                                        <div class="file-name">Prescription_109.pdf</div>
+                                        <div class="file-meta">PID: PT-2025-109 • Dr. Johnson</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="file-category">Pharmacy</span></td>
+                            <td>02/08/2025</td>
+                            <td class="file-size">0.8 MB</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn preview-btn" title="Preview">👁️</button>
+                                    <button class="action-btn download-btn" title="Download">⬇️</button>
+                                    <button class="action-btn delete-btn" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="file-info">
+                                    <div class="file-icon">📝</div>
+                                    <div>
+                                        <div class="file-name">Consultation_Notes_056.docx</div>
+                                        <div class="file-meta">PID: PT-2025-056 • Dr. Williams</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="file-category">Cardiology</span></td>
+                            <td>01/08/2025</td>
+                            <td class="file-size">1.2 MB</td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn preview-btn" title="Preview">👁️</button>
+                                    <button class="action-btn download-btn" title="Download">⬇️</button>
+                                    <button class="action-btn delete-btn" title="Delete">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="page-btn">❮</button>
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">4</button>
+                <button class="page-btn">5</button>
+                <button class="page-btn">❯</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Global variables to track current filters and state
+    let currentFilters = {
+        category: '',
+        year: '',
+        month: '',
+        date: '',
+        search: ''
+    };
+    let currentPage = 1;
+    let debounceTimer;
+
+    // Initialize the file browser when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up dependent filter controls
+        setupDependentFilters();
+        
+        // Set up event listeners for all filter controls
+        setupEventListeners();
+        
+        // Load initial files
+        loadFiles();
+    });
+
+    // Set up the dependent behavior of year -> month -> date filters
+    function setupDependentFilters() {
+        const yearSelect = document.getElementById('year');
+        const monthSelect = document.getElementById('month');
+        const dateInput = document.getElementById('date');
+
+        // Year selection enables/disables month selector
+        yearSelect.addEventListener('change', function() {
+            monthSelect.disabled = !this.value;
+            if (!this.value) {
+                monthSelect.value = '';
+                dateInput.disabled = true;
+                dateInput.value = '';
+            }
+        });
+
+        // Month selection enables/disables date selector
+        monthSelect.addEventListener('change', function() {
+            dateInput.disabled = !this.value;
+            if (!this.value) {
+                dateInput.value = '';
+            }
+            
+            // Set date input min/max based on selected year/month
+            if (yearSelect.value && this.value) {
+                const year = yearSelect.value;
+                const month = this.value.padStart(2, '0');
+                const daysInMonth = new Date(year, month, 0).getDate();
+                
+                dateInput.min = `${year}-${month}-01`;
+                dateInput.max = `${year}-${month}-${daysInMonth.toString().padStart(2, '0')}`;
+            }
+        });
+    }
+
+    // Set up event listeners for all interactive elements
+    function setupEventListeners() {
+        // Category filter
+        document.getElementById('category').addEventListener('change', function() {
+            currentFilters.category = this.value;
+            currentPage = 1;
+            loadFiles();
+        });
+
+        // Year filter
+        document.getElementById('year').addEventListener('change', function() {
+            currentFilters.year = this.value;
+            currentFilters.month = ''; // Reset month when year changes
+            currentFilters.date = '';   // Reset date when year changes
+            currentPage = 1;
+            loadFiles();
+        });
+
+        // Month filter
+        document.getElementById('month').addEventListener('change', function() {
+            currentFilters.month = this.value;
+            currentFilters.date = ''; // Reset date when month changes
+            currentPage = 1;
+            loadFiles();
+        });
+
+        // Date filter
+        document.getElementById('date').addEventListener('change', function() {
+            currentFilters.date = this.value;
+            currentPage = 1;
+            loadFiles();
+        });
+
+        // Search input with debounce
+        document.getElementById('search').addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                currentFilters.search = this.value.trim();
+                currentPage = 1;
+                loadFiles();
+            }, 500);
+        });
+
+        // Apply filters button (redundant but good for UX)
+        document.querySelector('.apply-filters').addEventListener('click', function() {
+            currentPage = 1;
+            loadFiles();
+        });
+    }
+
+    // Main function to load files based on current filters
+    function loadFiles(page = currentPage) {
+        currentPage = page;
+        const params = new URLSearchParams();
+        
+        // Add all active filters to the request
+        if (currentFilters.category) params.append('category', currentFilters.category);
+        if (currentFilters.year) params.append('year', currentFilters.year);
+        if (currentFilters.month) params.append('month', currentFilters.month);
+        if (currentFilters.date) {
+            // Extract day from date input (format: yyyy-mm-dd)
+            const day = currentFilters.date.split('-')[2];
+            params.append('date', day);
+        }
+        if (currentFilters.search) params.append('search', currentFilters.search);
+        params.append('page', currentPage);
+        
+        showLoadingState();
+        
+        fetch(`{% url 'get_files_by_date' %}?${params.toString()}`)
+            .then(handleResponse)
+            .then(data => {
+                renderFiles(data.files);
+                renderPagination(data.pagination);
+            })
+            .catch(error => {
+                showErrorState(error.message);
+            });
+    }
+
+    // Handle the API response
+    function handleResponse(response) {
+        if (!response.ok) {
+            return response.json().then(err => { 
+                throw new Error(err.error || 'Failed to load files'); 
+            });
+        }
+        return response.json();
+    }
+
+    // Render the files in the table
+    function renderFiles(files) {
+        const tbody = document.querySelector('tbody');
+        
+        if (files.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        No files found matching your criteria
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = files.map(file => `
+            <tr>
+                <td>
+                    <div class="file-info">
+                        <div class="file-icon">${getFileIcon(file.mimetype)}</div>
+                        <div>
+                            <div class="file-name">${file.filename}</div>
+                            <div class="file-meta">
+                                Uploaded by ${file.uploaded_by}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="file-category">${file.category}</span></td>
+                <td>${file.year}</td>
+                <td>${new Date(2000, file.month - 1).toLocaleString('default', {month: 'long'})}</td>
+                <td>${file.day}</td>
+                <td class="file-size">${file.formatted_size}</td>
+                <td>
+                    <div class="actions">
+                        <button class="action-btn preview-btn" title="Preview" 
+                            onclick="window.open('${file.filepath}', '_blank')">👁️</button>
+                        <button class="action-btn download-btn" title="Download"
+                            onclick="downloadFile('${file.filepath}', '${file.filename}')">⬇️</button>
+                        ${file.can_delete ? `
+                        <button class="action-btn delete-btn" title="Delete"
+                            onclick="deleteFile(${file.id}, this)">🗑️</button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Get appropriate icon for file type
+    function getFileIcon(mimetype) {
+        if (!mimetype) return '📁';
+        mimetype = mimetype.toLowerCase();
+        if (mimetype.includes('pdf')) return '📄';
+        if (mimetype.includes('image')) return '🖼️';
+        if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return '📊';
+        if (mimetype.includes('word')) return '📝';
+        if (mimetype.includes('video')) return '🎬';
+        if (mimetype.includes('audio')) return '🎵';
+        return '📁';
+    }
+
+    // Render pagination controls
+    function renderPagination(pagination) {
+        const container = document.querySelector('.pagination');
+        if (!pagination || pagination.total_pages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        const { current_page, total_pages } = pagination;
+        container.innerHTML = '';
+        
+        // Previous button
+        container.appendChild(createPageBtn('❮', current_page > 1, () => loadFiles(current_page - 1)));
+        
+        // Always show first page
+        container.appendChild(createPageBtn(1, current_page === 1, () => loadFiles(1)));
+        
+        // Show ellipsis if needed
+        if (current_page > 3) {
+            container.appendChild(createEllipsis());
+        }
+        
+        // Show current page and neighbors
+        const start = Math.max(2, current_page - 1);
+        const end = Math.min(total_pages - 1, current_page + 1);
+        
+        for (let i = start; i <= end; i++) {
+            container.appendChild(createPageBtn(i, i === current_page, () => loadFiles(i)));
+        }
+        
+        // Show ellipsis if needed
+        if (current_page < total_pages - 2) {
+            container.appendChild(createEllipsis());
+        }
+        
+        // Always show last page if different from first
+        if (total_pages > 1) {
+            container.appendChild(createPageBtn(total_pages, current_page === total_pages, () => loadFiles(total_pages)));
+        }
+        
+        // Next button
+        container.appendChild(createPageBtn('❯', current_page < total_pages, () => loadFiles(current_page + 1)));
+    }
+
+    // Helper to create a pagination button
+    function createPageBtn(text, isActive, onClick) {
+        const btn = document.createElement('button');
+        btn.className = `page-btn ${isActive ? 'active' : ''}`;
+        btn.textContent = text;
+        btn.addEventListener('click', onClick);
+        return btn;
+    }
+
+    // Helper to create ellipsis for pagination
+    function createEllipsis() {
+        const span = document.createElement('span');
+        span.className = 'page-ellipsis';
+        span.textContent = '...';
+        return span;
+    }
+
+    // Show loading state
+    function showLoadingState() {
+        document.querySelector('tbody').innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <div class="loading-spinner"></div>
+                    <div>Loading files...</div>
+                </td>
+            </tr>
+        `;
+    }
+
+    // Show error state
+    function showErrorState(message) {
+        document.querySelector('tbody').innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4 text-red-500">
+                    ${message || 'Failed to load files'}
+                </td>
+            </tr>
+        `;
+        document.querySelector('.pagination').innerHTML = '';
+    }
+
+    // Download file function
+    function downloadFile(url, filename) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Delete file function
+    function deleteFile(fileId, btn) {
+        if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) {
+            return;
+        }
+        
+        btn.disabled = true;
+        btn.innerHTML = '⌛';
+        
+        fetch(`{% url 'delete_file' file_id=0 %}`.replace('0', fileId), {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to delete file');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Remove the row from the table
+                btn.closest('tr').remove();
+                // Reload files if this was the last item on the page
+                if (document.querySelectorAll('tbody tr').length === 0) {
+                    loadFiles(Math.max(1, currentPage - 1));
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error.message);
+            btn.disabled = false;
+            btn.innerHTML = '🗑️';
+        });
+    }
+
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+</script>
+</body>
+</html>

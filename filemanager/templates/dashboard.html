@@ -1,0 +1,301 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFile - File Management System</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-icon">📁</div>
+            <span>MedFile</span>
+            <span style="font-size: 0.875rem; opacity: 0.8;">File Management System</span>
+        </div>
+        <div class="user-section">
+            <div class="user-badge">{{ request.user.department }}</div>
+            <div class="user-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>File Management Dashboard</h1>
+            <p>Full system access - manage all medical categories</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <a href="{% url 'dashboard' %}" class="tab-btn {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-tab="dashboard">Dashboard</a>
+            {% if request.user.is_staff or request.user.department.code == 'ADMIN' %}
+                <a href="{% url 'upload' %}" class="tab-btn {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" data-tab="upload">Upload Files</a>
+            {% endif %}
+            <a href="{% url 'file_browser' %}" class="tab-btn {% if request.resolver_match.url_name == 'file_browser' %}active{% endif %}" data-tab="browse">Browse Files</a>
+            {% if request.user.is_staff or request.user.department.code == 'ADMIN' %}
+                <a href="{% url 'usermanagement' %}" class="tab-btn {% if request.resolver_match.url_name == 'management' %}active{% endif %}" data-tab="users">User Management</a>
+                <a href="{% url 'categories' %}" class="tab-btn {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" data-tab="categories">Categories</a>
+            {% endif %}
+        </div>
+
+        <!-- Dashboard Content -->
+        <!-- Dashboard Content -->
+<div id="dashboardContent" class="tab-content active">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-content">
+                <div class="stat-label">Total Files</div>
+                <div class="stat-number">{{ total_files }}</div>
+                <div class="stat-subtitle">{% if is_admin %}Across all categories{% else %}In your department{% endif %}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📁</div>
+            <div class="stat-content">
+                <div class="stat-label">Categories</div>
+                <div class="stat-number">{{ category_count }}</div>
+                <div class="stat-subtitle">{% if is_admin %}Total medical categories{% else %}In your department{% endif %}</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💾</div>
+            <div class="stat-content">
+                <div class="stat-label">Storage Used</div>
+                <div class="stat-number">{{ storage_used|filesizeformat }}</div>
+                <div class="stat-subtitle">{{ total_files }} files</div>
+            </div>
+        </div>
+        {% if is_admin %}
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <div class="stat-label">Today's Users</div>
+                <div class="stat-number">{{ today_users }}</div>
+                <div class="stat-subtitle">Active today</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Category Overview -->
+    <div class="section-card">
+        <h2 class="section-title">Category Overview</h2>
+        <div class="category-grid">
+            {% for category in category_stats %}
+            <div class="category-item">
+                <div class="category-info">
+                    <div class="category-name">{{ category.name }}</div>
+                    <div class="category-desc">{{ category.description }}</div>
+                </div>
+                <div class="category-count">{{ category.file_count }} files</div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <div class="empty-icon">📁</div>
+                <div class="empty-text">No categories available</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent File Uploads -->
+    <div class="section-card">
+        <h2 class="section-title">Recent File Uploads</h2>
+        {% if recent_uploads %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f1f5f9;">
+                        <th style="padding: 0.75rem; text-align: left;">File Name</th>
+                        <th style="padding: 0.75rem; text-align: left;">Category</th>
+                        <th style="padding: 0.75rem; text-align: left;">Uploaded By</th>
+                        <th style="padding: 0.75rem; text-align: left;">Date</th>
+                        <th style="padding: 0.75rem; text-align: left;">Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in recent_uploads %}
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 0.75rem;">{{ file.name }}</td>
+                        <td style="padding: 0.75rem;">{{ file.category.name }}</td>
+                        <td style="padding: 0.75rem;">{{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}</td>
+                        <td style="padding: 0.75rem;">{{ file.uploaded_at|date:"M d, Y H:i" }}</td>
+                        <td style="padding: 0.75rem;">{{ file.size|filesizeformat }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">🕐</div>
+            <div class="empty-text">No recent file uploads</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+        <!-- Upload Files Content -->
+        <div id="uploadContent" class="tab-content">
+            <div class="main-card">
+                <div class="card-header">
+                    <div class="card-icon">📤</div>
+                    <div>
+                        <div class="card-title">File Upload & Scanning</div>
+                        <div class="card-subtitle">Upload files or scan documents and organize them by category and date</div>
+                    </div>
+                </div>
+
+                <!-- Upload Type Selection -->
+                <div class="upload-tabs">
+                    <div class="upload-tab active" data-upload-type="file">
+                        <div class="upload-tab-icon">📁</div>
+                        <span>Upload File</span>
+                    </div>
+                    <div class="upload-tab" data-upload-type="scan">
+                        <div class="upload-tab-icon">📷</div>
+                        <span>Scan Document</span>
+                    </div>
+                </div>
+
+                <!-- Success/Error Messages -->
+                <div id="message" class="message"></div>
+
+                <!-- Upload Form -->
+                <div class="form-container">
+                    <form id="uploadForm">
+                        <!-- File Upload -->
+                        <div class="form-group">
+                            <label class="form-label">File</label>
+                            <div class="file-input-container" id="fileDropZone">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
+                                <div><strong>Choose File</strong> or drag and drop</div>
+                                <div class="file-input-text">No file chosen</div>
+                                <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt">
+                            </div>
+                            <div id="filePreview" class="file-preview">
+                                <div class="file-info">
+                                    <div>
+                                        <div class="file-name" id="fileName"></div>
+                                        <div class="file-size" id="fileSize"></div>
+                                    </div>
+                                    <button type="button" class="remove-file" id="removeFile">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="category" required>
+                                <option value="">Select a category</option>
+                                <option value="administration">Administration</option>
+                                <option value="emergency">Emergency</option>
+                                <option value="laboratory">Laboratory</option>
+                                <option value="neonatal">Neonatal Care</option>
+                                <option value="pediatrics">Pediatrics</option>
+                                <option value="pharmacy">Pharmacy</option>
+                                <option value="radiology">Radiology</option>
+                                <option value="surgery">Surgery</option>
+                            </select>
+                        </div>
+
+                        <!-- Date Fields -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Year</label>
+                                <select class="form-select" id="year" required>
+                                    <option value="">Year</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Month</label>
+                                <select class="form-select" id="month" required>
+                                    <option value="">Month</option>
+                                    <option value="01">January</option>
+                                    <option value="02">February</option>
+                                    <option value="03">March</option>
+                                    <option value="04">April</option>
+                                    <option value="05">May</option>
+                                    <option value="06">June</option>
+                                    <option value="07">July</option>
+                                    <option value="08">August</option>
+                                    <option value="09">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date</label>
+                                <select class="form-select" id="date" required>
+                                    <option value="">Date</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Select Date</label>
+                                <input type="date" class="form-input" id="dateInput">
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label class="form-label">Description (Optional)</label>
+                            <textarea class="form-textarea" id="description" placeholder="Enter file description..."></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn">
+                            <span>📤</span>
+                            Upload File
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Browse Files Content -->
+        <div id="browseContent" class="tab-content">
+            <div class="main-card">
+                <div class="card-header">
+                    <div class="card-icon">🔍</div>
+                    <div>
+                        <div class="card-title">Browse Files</div>
+                        <div class="card-subtitle">Search and manage your uploaded files</div>
+                    </div>
+                </div>
+                <div class="empty-state">
+                    <div class="empty-icon">📁</div>
+                    <div class="empty-text">No files to browse</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Content -->
+        <div id="userContent" class="tab-content">
+            <div class="main-card">
+                <div class="card-header">
+                    <div class="card-icon">👥</div>
+                    <div>
+                        <div class="card-title">User Management</div>
+                        <div class="card-subtitle">Manage system users and permissions</div>
+                    </div>
+                </div>
+                <div class="empty-state">
+                    <div class="empty-icon">👤</div>
+                    <div class="empty-text">User management interface</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/dashboard.js' %}"></script>
+</body>
+</html>

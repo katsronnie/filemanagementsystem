@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedFile - Categories Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Tab Navigation */
+        .tab-nav {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            gap: 0.25rem;
+        }
+        .tab-nav a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .tab-nav a:hover {
+            text-decoration: none;
+        }
+
+        .tab-nav a.active {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #64748b;
+        }
+
+        .tab-btn.active {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f8fafc;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .navbar-brand .icon {
+            width: 32px;
+            height: 32px;
+            background-color: #3b82f6;
+            border-radius: 6px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .navbar-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-left: 42px;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-badge {
+            background-color: #3b82f6;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1rem;
+        }
+
+        /* Categories Management Section */
+        .categories-management {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title h2 {
+            font-size: 1.5rem;
+            color: #1f2937;
+        }
+
+        .section-subtitle {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .add-category-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .add-category-btn:hover {
+            background-color: #2563eb;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .category-name {
+            font-weight: 500;
+        }
+
+        .category-description {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .category-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+
+        .status-inactive {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-btn {
+            background-color: #f3f4f6;
+            color: #374151;
+        }
+
+        .edit-btn:hover {
+            background-color: #e5e7eb;
+        }
+
+        .delete-btn {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+
+        .delete-btn:hover {
+            background-color: #fee2e2;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 {
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn-secondary {
+            background-color: #f3f4f6;
+            color: #374151;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* Messages */
+        .messages {
+            margin-bottom: 1.5rem;
+        }
+
+        .alert {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background-color: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #dcfce7;
+        }
+
+        .alert-error {
+            background-color: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fee2e2;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 1rem;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .table-container {
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div>
+            <div class="navbar-brand">
+                <div class="icon">📁</div>
+                MedFile
+            </div>
+            <div class="navbar-subtitle">File Management System</div>
+        </div>
+        <div class="navbar-right">
+            <div class="admin-badge">Administrator</div>
+            <div class="user-avatar">D</div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Categories Management</h1>
+            <p>Create and manage file categories for better organization</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tab-nav">
+            <a href="{% url 'dashboard' %}" class="tab-btn {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" data-tab="dashboard">Dashboard</a>
+            <a href="{% url 'upload' %}" class="tab-btn {% if request.resolver_match.url_name == 'upload' %}active{% endif %}" data-tab="upload">Upload Files</a>
+            <a href="{% url 'file_browser' %}" class="tab-btn {% if request.resolver_match.url_name == 'file_browser' %}active{% endif %}" data-tab="browse">Browse Files</a>
+            <a href="{% url 'usermanagement' %}" class="tab-btn {% if request.resolver_match.url_name == 'usermanagement' %}active{% endif %}" data-tab="users">User Management</a>
+            <a href="{% url 'categories' %}" class="tab-btn {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" data-tab="categories">Categories</a>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Categories Management Section -->
+        <div class="categories-management">
+            <div class="section-header">
+                <div>
+                    <div class="section-title">
+                        <span>🏷️</span>
+                        <h2>File Categories</h2>
+                    </div>
+                    <div class="section-subtitle">Organize files with categories and subcategories</div>
+                </div>
+                <button class="add-category-btn" onclick="openAddCategoryModal()">
+                    <span>+</span>
+                    Add Category
+                </button>
+            </div>
+
+            <!-- Categories Table -->
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Department</th>
+                            <th>Files</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        {% for category in categories %}
+                        <tr>
+                            <td>
+                                <span class="category-name">{{ category.name }}</span>
+                                <div class="category-description">{{ category.description }}</div>
+                            </td>
+                            <td>{{ category.get_department_display }}</td>
+                            <td>{{ category.year_folders.count }}</td>
+                            <td>
+                                <span class="category-status {% if category.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                    {% if category.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="actions">
+                                    <button class="action-btn edit-btn" onclick="editCategory('{{ category.id }}')">✏️</button>
+                                    <button class="action-btn delete-btn" onclick="confirmDeleteCategory('{{ category.id }}', '{{ category.name }}')">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center;">No categories found. Add your first category!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Category</h3>
+                <button class="close-btn" onclick="closeAddCategoryModal()">&times;</button>
+            </div>
+            <form id="addCategoryForm" method="POST" action="{% url 'categories' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="categoryName">Category Name *</label>
+                    <input type="text" id="categoryName" name="name" required placeholder="e.g., Neurology">
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Description</label>
+                    <textarea id="categoryDescription" name="description" placeholder="Brief description of this category"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="categoryDepartment">Department *</label>
+                    <select id="categoryDepartment" name="department" required>
+                        <option value="">Select Department</option>
+                        {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="categoryIsActive">Status</label>
+                    <select id="categoryIsActive" name="is_active">
+                        <option value="true" selected>Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div id="editCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Category</h3>
+                <button class="close-btn" onclick="closeEditCategoryModal()">&times;</button>
+            </div>
+            <form id="editCategoryForm" method="POST" action="">
+                {% csrf_token %}
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" id="editCategoryId" name="category_id">
+                <div class="form-group">
+                    <label for="editCategoryName">Category Name *</label>
+                    <input type="text" id="editCategoryName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCategoryDescription">Description</label>
+                    <textarea id="editCategoryDescription" name="description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editCategoryDepartment">Department *</label>
+                    <select id="editCategoryDepartment" name="department" required>
+                        <option value="NEONATAL">Neonatal Care</option>
+                        <option value="PEDIATRIC">Pediatrics</option>
+                        <option value="EMERGENCY">Emergency</option>
+                        <option value="SURGERY">Surgery</option>
+                        <option value="LAB">Laboratory</option>
+                        <option value="RADIOLOGY">Radiology</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editCategoryIsActive">Status</label>
+                    <select id="editCategoryIsActive" name="is_active">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEditCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteCategoryModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Confirm Deletion</h3>
+                <button class="close-btn" onclick="closeDeleteCategoryModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the category "<span id="categoryToDeleteName"></span>"?</p>
+                <p class="category-description">This action cannot be undone.</p>
+            </div>
+            <div class="modal-actions">
+                <form id="deleteCategoryForm" method="POST" action="">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="DELETE">
+                    <input type="hidden" id="deleteCategoryId" name="category_id">
+                    <button type="button" class="btn-secondary" onclick="closeDeleteCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" style="background-color: #dc2626;">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching functionality
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            console.log(`Switched to ${tabName} tab`);
+        }
+
+        // Modal functionality
+        function openAddCategoryModal() {
+            document.getElementById('addCategoryModal').style.display = 'block';
+        }
+
+        function closeAddCategoryModal() {
+            document.getElementById('addCategoryModal').style.display = 'none';
+            document.getElementById('addCategoryForm').reset();
+        }
+
+        function openEditCategoryModal() {
+            document.getElementById('editCategoryModal').style.display = 'block';
+        }
+
+        function closeEditCategoryModal() {
+            document.getElementById('editCategoryModal').style.display = 'none';
+        }
+
+        function openDeleteCategoryModal() {
+            document.getElementById('deleteCategoryModal').style.display = 'block';
+        }
+
+        function closeDeleteCategoryModal() {
+            document.getElementById('deleteCategoryModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addCategoryModal');
+            const editModal = document.getElementById('editCategoryModal');
+            const deleteModal = document.getElementById('deleteCategoryModal');
+            
+            if (event.target === addModal) {
+                closeAddCategoryModal();
+            }
+            
+            if (event.target === editModal) {
+                closeEditCategoryModal();
+            }
+            
+            if (event.target === deleteModal) {
+                closeDeleteCategoryModal();
+            }
+        }
+
+        // Edit category functionality
+        function editCategory(categoryId) {
+            fetch(`/categories/${categoryId}/json/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editCategoryId').value = data.id;
+                    document.getElementById('editCategoryName').value = data.name;
+                    document.getElementById('editCategoryDescription').value = data.description;
+                    document.getElementById('editCategoryDepartment').value = data.department;
+                    document.getElementById('editCategoryIsActive').value = data.is_active.toString();
+                    document.getElementById('editCategoryForm').action = `/categories/${data.id}/`;
+                    openEditCategoryModal();
+                })
+                .catch(error => {
+                    console.error('Error fetching category data:', error);
+                    alert('Error loading category data');
+                });
+        }
+
+        // Delete category confirmation
+        function confirmDeleteCategory(id, name) {
+            document.getElementById('deleteCategoryId').value = id;
+            document.getElementById('categoryToDeleteName').textContent = name;
+            document.getElementById('deleteCategoryForm').action = `/categories/${id}/`;
+            openDeleteCategoryModal();
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // ESC to close modals
+            if (e.key === 'Escape') {
+                closeAddCategoryModal();
+                closeEditCategoryModal();
+                closeDeleteCategoryModal();
+            }
+            
+            // Ctrl+N to add new category
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                openAddCategoryModal();
+            }
+        });
+    </script>
+</body>
+</html>
