@@ -66,8 +66,28 @@ class UserSession(models.Model):
     login_time = models.DateTimeField(default=timezone.now)
     logout_time = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        ordering = ['-login_time']
+        
+    def save(self, *args, **kwargs):
+        # Ensure times are timezone-aware
+        if self.login_time and timezone.is_naive(self.login_time):
+            self.login_time = timezone.make_aware(self.login_time)
+        if self.logout_time and timezone.is_naive(self.logout_time):
+            self.logout_time = timezone.make_aware(self.logout_time)
+            
+        # Validate logout time is after login time
+        if self.logout_time and self.login_time and self.logout_time < self.login_time:
+            raise ValueError("Logout time cannot be before login time")
+            
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.user.username}: {self.login_time} - {self.logout_time or 'Active'}"
+        login_time_str = timezone.localtime(self.login_time).strftime("%Y-%m-%d %H:%M:%S")
+        if self.logout_time:
+            logout_time_str = timezone.localtime(self.logout_time).strftime("%Y-%m-%d %H:%M:%S")
+            return f"{self.user.username}: {login_time_str} to {logout_time_str}"
+        return f"{self.user.username}: {login_time_str} (Active)"
 
 class Category(models.Model):
     name = models.CharField(max_length=100)

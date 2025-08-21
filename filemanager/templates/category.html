@@ -1,442 +1,13 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedFile - Categories Management</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-        }
-
-        /* Navbar */
-        .navbar {
-            background-color: #1e3a8a;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            background: white;
-            border-radius: 12px;
-            padding: 0.5rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            gap: 0.25rem;
-        }
-        .tab-nav a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .tab-nav a:hover {
-            text-decoration: none;
-        }
-
-        .tab-nav a.active {
-            background: #f1f5f9;
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            color: #64748b;
-        }
-
-        .tab-btn.active {
-            background: #f1f5f9;
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .tab-btn:hover:not(.active) {
-            background: #f8fafc;
-        }
-
-        .navbar-brand {
-            display: flex;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
-        .navbar-brand .icon {
-            width: 32px;
-            height: 32px;
-            background-color: #3b82f6;
-            border-radius: 6px;
-            margin-right: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-
-        .navbar-subtitle {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-left: 42px;
-        }
-
-        .navbar-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .admin-badge {
-            background-color: #3b82f6;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background-color: #3b82f6;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        /* Header */
-        .header {
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            color: #1f2937;
-        }
-
-        .header p {
-            color: #6b7280;
-            font-size: 1rem;
-        }
-
-        /* Categories Management Section */
-        .categories-management {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .section-title h2 {
-            font-size: 1.5rem;
-            color: #1f2937;
-        }
-
-        .section-subtitle {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-top: 0.25rem;
-        }
-
-        .add-category-btn {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .add-category-btn:hover {
-            background-color: #2563eb;
-        }
-
-        /* Table */
-        .table-container {
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            text-align: left;
-            padding: 1rem;
-            border-bottom: 2px solid #e5e7eb;
-            color: #374151;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid #f3f4f6;
-        }
-
-        tr:hover {
-            background-color: #f9fafb;
-        }
-
-        .category-name {
-            font-weight: 500;
-        }
-
-        .category-description {
-            color: #6b7280;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-
-        .category-status {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-
-        .status-active {
-            background-color: #f0fdf4;
-            color: #16a34a;
-        }
-
-        .status-inactive {
-            background-color: #fef2f2;
-            color: #dc2626;
-        }
-
-        .actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .action-btn {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.3s ease;
-        }
-
-        .edit-btn {
-            background-color: #f3f4f6;
-            color: #374151;
-        }
-
-        .edit-btn:hover {
-            background-color: #e5e7eb;
-        }
-
-        .delete-btn {
-            background-color: #fef2f2;
-            color: #dc2626;
-        }
-
-        .delete-btn:hover {
-            background-color: #fee2e2;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .modal-header h3 {
-            color: #1f2937;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6b7280;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #374151;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            margin-top: 2rem;
-        }
-
-        .btn-secondary {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        /* Messages */
-        .messages {
-            margin-bottom: 1.5rem;
-        }
-
-        .alert {
-            padding: 0.75rem 1.25rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .alert-success {
-            background-color: #f0fdf4;
-            color: #16a34a;
-            border: 1px solid #dcfce7;
-        }
-
-        .alert-error {
-            background-color: #fef2f2;
-            color: #dc2626;
-            border: 1px solid #fee2e2;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .navbar {
-                padding: 1rem;
-            }
-            
-            .container {
-                padding: 1rem;
-            }
-            
-            .section-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .table-container {
-                font-size: 0.875rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/category.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile_dialog.css' %}">
+    <script src="{% static 'js/profile_dialog.js' %}"></script>
 </head>
 <body>
     <!-- Navbar -->
@@ -449,8 +20,40 @@
             <div class="navbar-subtitle">File Management System</div>
         </div>
         <div class="navbar-right">
-            <div class="admin-badge">Administrator</div>
-            <div class="user-avatar">D</div>
+            <div class="user-badge">{{ request.user.department }}</div>
+            <div class="user-avatar" onclick="toggleProfileDialog()">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+            
+            <!-- Mini Profile Dialog -->
+            <div id="profileDialog" class="profile-dialog">
+                <div class="profile-content">
+                    <div class="profile-header">
+                        <div class="large-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+                        <div class="user-info">
+                            <div class="full-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="username">@{{ request.user.username }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <span class="label">Department:</span>
+                            <span class="value">{{ request.user.department }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Login Status:</span>
+                            <span class="value status-active">Active</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Last Login:</span>
+                            <span class="value">{{ request.user.last_login|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="{% url 'login' %}" class="logout-btn" onclick="handleLogout(event)">
+                            <span class="icon">🚪</span> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -651,102 +254,6 @@
         </div>
     </div>
 
-    <script>
-        // Tab switching functionality
-        function switchTab(tabName) {
-            const tabs = document.querySelectorAll('.nav-tab');
-            tabs.forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-            console.log(`Switched to ${tabName} tab`);
-        }
-
-        // Modal functionality
-        function openAddCategoryModal() {
-            document.getElementById('addCategoryModal').style.display = 'block';
-        }
-
-        function closeAddCategoryModal() {
-            document.getElementById('addCategoryModal').style.display = 'none';
-            document.getElementById('addCategoryForm').reset();
-        }
-
-        function openEditCategoryModal() {
-            document.getElementById('editCategoryModal').style.display = 'block';
-        }
-
-        function closeEditCategoryModal() {
-            document.getElementById('editCategoryModal').style.display = 'none';
-        }
-
-        function openDeleteCategoryModal() {
-            document.getElementById('deleteCategoryModal').style.display = 'block';
-        }
-
-        function closeDeleteCategoryModal() {
-            document.getElementById('deleteCategoryModal').style.display = 'none';
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const addModal = document.getElementById('addCategoryModal');
-            const editModal = document.getElementById('editCategoryModal');
-            const deleteModal = document.getElementById('deleteCategoryModal');
-            
-            if (event.target === addModal) {
-                closeAddCategoryModal();
-            }
-            
-            if (event.target === editModal) {
-                closeEditCategoryModal();
-            }
-            
-            if (event.target === deleteModal) {
-                closeDeleteCategoryModal();
-            }
-        }
-
-        // Edit category functionality
-        function editCategory(categoryId) {
-            fetch(`/categories/${categoryId}/json/`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('editCategoryId').value = data.id;
-                    document.getElementById('editCategoryName').value = data.name;
-                    document.getElementById('editCategoryDescription').value = data.description;
-                    document.getElementById('editCategoryDepartment').value = data.department;
-                    document.getElementById('editCategoryIsActive').value = data.is_active.toString();
-                    document.getElementById('editCategoryForm').action = `/categories/${data.id}/`;
-                    openEditCategoryModal();
-                })
-                .catch(error => {
-                    console.error('Error fetching category data:', error);
-                    alert('Error loading category data');
-                });
-        }
-
-        // Delete category confirmation
-        function confirmDeleteCategory(id, name) {
-            document.getElementById('deleteCategoryId').value = id;
-            document.getElementById('categoryToDeleteName').textContent = name;
-            document.getElementById('deleteCategoryForm').action = `/categories/${id}/`;
-            openDeleteCategoryModal();
-        }
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // ESC to close modals
-            if (e.key === 'Escape') {
-                closeAddCategoryModal();
-                closeEditCategoryModal();
-                closeDeleteCategoryModal();
-            }
-            
-            // Ctrl+N to add new category
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                openAddCategoryModal();
-            }
-        });
-    </script>
+    <script src="{% static 'js/category.js' %}"></script>
 </body>
 </html>

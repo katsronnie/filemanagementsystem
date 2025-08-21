@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedFile - File Management System</title>
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile_dialog.css' %}">
+    <script src="{% static 'js/profile_dialog.js' %}"></script>
 
 </head>
 <body>
@@ -18,7 +20,41 @@
         </div>
         <div class="user-section">
             <div class="user-badge">{{ request.user.department }}</div>
-            <div class="user-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+            <div class="user-avatar" onclick="toggleProfileDialog()">
+    {{ request.user.first_name|first|default:request.user.username|first }}
+</div>
+            
+            <!-- Mini Profile Dialog -->
+            <div id="profileDialog" class="profile-dialog">
+                <div class="profile-content">
+                    <div class="profile-header">
+                        <div class="large-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+                        <div class="user-info">
+                            <div class="full-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="username">@{{ request.user.username }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <span class="label">Department:</span>
+                            <span class="value">{{ request.user.department }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Login Status:</span>
+                            <span class="value status-active">Active</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Last Login:</span>
+                            <span class="value">{{ request.user.last_login|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="{% url 'login' %}" class="logout-btn" onclick="handleLogout(event)">
+                            <span class="icon">🚪</span> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 

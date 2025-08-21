@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedFile - File Management System</title>
     <link rel="stylesheet" href="{% static 'css/upload.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile_dialog.css' %}">
+    <script src="{% static 'js/profile_dialog.js' %}"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -16,9 +18,40 @@
             <span style="font-size: 0.875rem; opacity: 0.8;">File Management System</span>
         </div>
         <div class="user-section">
-            <div class="user-badge">Administrator</div>
-            <div class="user-avatar">D</div>
-        </div>
+            <div class="user-badge">{{ request.user.department }}</div>
+            <div class="user-avatar" onclick="toggleProfileDialog()">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+            
+            <!-- Mini Profile Dialog -->
+            <div id="profileDialog" class="profile-dialog">
+                <div class="profile-content">
+                    <div class="profile-header">
+                        <div class="large-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+                        <div class="user-info">
+                            <div class="full-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="username">@{{ request.user.username }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <span class="label">Department:</span>
+                            <span class="value">{{ request.user.department }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Login Status:</span>
+                            <span class="value status-active">Active</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Last Login:</span>
+                            <span class="value">{{ request.user.last_login|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="{% url 'login' %}" class="logout-btn" onclick="handleLogout(event)">
+                            <span class="icon">🚪</span> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
     </nav>
 
     <div class="container">
@@ -232,12 +265,18 @@
                 </div>
 
                 <!-- Scanned Documents List -->
-                <div class="scanned-documents" id="scannedDocumentsContainer">
-                    <div class="scanned-documents-title">Scanned Documents</div>
-                    <div class="scanned-documents-list" id="scannedDocumentsList">
+                <div class="scanned-documents" id="scannedDocumentsContainer" style="display: none; margin-top: 20px; background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
+                    <div class="scanned-documents-title" style="font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 1rem;">
+                        📄 Scanned Pages
+                    </div>
+                    <div class="scanned-documents-list" id="scannedDocumentsList" style="display: grid; gap: 1rem;">
                         <!-- Scanned documents will be added here -->
                     </div>
                 </div>
+
+                <style>
+                    
+                </style>
             </div>
         </div>
     </div>

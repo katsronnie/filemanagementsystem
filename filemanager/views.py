@@ -1,10 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 import re
 import uuid
 import calendar
+from django.db.models import Case, When, Value, CharField, IntegerField, F
 import win32com.client
 from django.contrib.auth import authenticate, login
 from django.views import View
+from django.contrib.auth.forms import AuthenticationForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -45,6 +47,87 @@ import logging
 import tempfile
 
 
+@login_required
+@require_GET
+def search_files(request):
+    """API endpoint for searching files within a department"""
+    try:
+        # Get search parameters
+        query = request.GET.get('query', '').strip()
+        date_range = request.GET.get('dateRange', 'all')
+        file_type = request.GET.get('fileType', 'all')
+        category_id = request.GET.get('category', 'all')
+        sort_by = request.GET.get('sortBy', 'date_desc')
+
+        # Start with files from user's department
+        files = MedicalFile.objects.filter(
+            category__department=request.user.department
+        ).select_related('category', 'uploaded_by')
+
+        # Apply search query
+        if query:
+            files = files.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query) |
+                Q(uploaded_by__username__icontains=query) |
+                Q(category__name__icontains=query)
+            )
+
+        # Apply date range filter
+        now = timezone.now()
+        if date_range == 'today':
+            files = files.filter(uploaded_at__date=now.date())
+        elif date_range == 'week':
+            files = files.filter(uploaded_at__gte=now - timedelta(days=7))
+        elif date_range == 'month':
+            files = files.filter(uploaded_at__gte=now - timedelta(days=30))
+        elif date_range == 'year':
+            files = files.filter(uploaded_at__gte=now - timedelta(days=365))
+
+        # Apply file type filter
+        if file_type != 'all':
+            files = files.filter(file_type=file_type)
+
+        # Apply category filter
+        if category_id != 'all':
+            files = files.filter(category_id=category_id)
+
+        # Apply sorting
+        if sort_by == 'date_desc':
+            files = files.order_by('-uploaded_at')
+        elif sort_by == 'date_asc':
+            files = files.order_by('uploaded_at')
+        elif sort_by == 'name_asc':
+            files = files.order_by('name')
+        elif sort_by == 'name_desc':
+            files = files.order_by('-name')
+        elif sort_by == 'size_desc':
+            files = files.order_by('-size')
+        elif sort_by == 'size_asc':
+            files = files.order_by('size')
+
+        # Prepare response data
+        files_data = [{
+            'id': file.id,
+            'name': file.name,
+            'category': file.category.name,
+            'file_type': file.file_type,
+            'size': file.size,
+            'uploaded_at': file.uploaded_at.isoformat(),
+            'uploaded_by': file.uploaded_by.get_full_name() or file.uploaded_by.username,
+            'url': file.file.url
+        } for file in files]
+
+        return JsonResponse({
+            'success': True,
+            'files': files_data
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 
@@ -112,10 +195,14 @@ if not os.path.exists(TEMP_SCAN_DIR):
 @require_POST
 @csrf_exempt
 def scan_document(request):
+    """Handle document scanning with support for multi-page scanning."""
     pythoncom.CoInitialize()  # Initialize COM first
     wia_manager = None
     device = None
     item = None
+    
+    page_id = f"page_{uuid4().hex}"
+    temp_file = os.path.join(TEMP_SCAN_DIR, f"{page_id}.pdf")
 
     def safe_int(value, default):
         try:
@@ -237,49 +324,65 @@ TEMP_SCAN_DIR = "/path/to/temp/scan/dir"
 @csrf_exempt
 def finalize_scan(request):
     """Combine multiple scanned PDF pages into one PDF using pypdf."""
-
-    page_ids = request.POST.getlist("page_ids[]")  # List of PDF filenames (e.g. ['page1.pdf', 'page2.pdf'])
-
-    if not page_ids:
-        return JsonResponse({"success": False, "error": "No pages provided to merge"}, status=400)
-
-    merger = PdfMerger()
-
     try:
-        for pid in page_ids:
-            path = os.path.join(TEMP_SCAN_DIR, pid)
-            if not os.path.exists(path):
-                return JsonResponse({"success": False, "error": f"Page {pid} not found"}, status=400)
-            merger.append(path)
+        page_ids = request.POST.getlist("page_ids[]")
+        
+        if not page_ids:
+            return JsonResponse({
+                "success": False,
+                "error": "No pages provided"
+            })
 
-        combined_pdf_path = os.path.join(TEMP_SCAN_DIR, f"combined_{uuid.uuid4()}.pdf")
-        merger.write(combined_pdf_path)
-        merger.close()
+        merger = PdfMerger()
+        temp_files = []
 
-        with open(combined_pdf_path, "rb") as f:
-            base64_pdf = base64.b64encode(f.read()).decode("utf-8")
+        try:
+            for page_id in page_ids:
+                # Create a temporary file for each page
+                temp_file = os.path.join(TEMP_SCAN_DIR, f"{page_id}.pdf")
+                temp_files.append(temp_file)
+                
+                # Add to merger
+                merger.append(temp_file)
+
+            # Create output PDF
+            output_filename = f"scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            output_path = os.path.join(TEMP_SCAN_DIR, output_filename)
+            
+            # Write the combined PDF
+            with open(output_path, 'wb') as output_file:
+                merger.write(output_file)
+
+            # Read the combined PDF and convert to base64
+            with open(output_path, 'rb') as f:
+                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+
+            return JsonResponse({
+                "success": True,
+                "image": f"data:application/pdf;base64,{base64_pdf}",
+                "file_name": output_filename
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            })
+
+        finally:
+            # Clean up temporary files
+            merger.close()
+            for temp_file in temp_files:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+            if os.path.exists(output_path):
+                os.remove(output_path)
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": f"Failed to merge PDFs: {str(e)}"}, status=500)
-
-    finally:
-        # Cleanup individual pages if needed
-        for pid in page_ids:
-            try:
-                os.unlink(os.path.join(TEMP_SCAN_DIR, pid))
-            except Exception:
-                pass
-        # Cleanup combined PDF file as well, or keep if you want
-        try:
-            os.unlink(combined_pdf_path)
-        except Exception:
-            pass
-
-    return JsonResponse({
-        "success": True,
-        "image": f"data:application/pdf;base64,{base64_pdf}",
-        "file_name": f"scan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    })
+        return JsonResponse({
+            "success": False,
+            "error": str(e)
+        })
    
     
 @login_required
@@ -481,18 +584,16 @@ def upload_file_api(request):
     
 class LoginView(View):
     def get(self, request):
-        return render(request, 'login.html', {'form': YourLoginForm()})
+        return render(request, 'registration/login.html', {'form': AuthenticationForm()})
 
     def post(self, request):
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        
-        if user is not None:
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
             login(request, user)
             
             # Check if user has a department and redirect accordingly
-            if hasattr(user, 'department'):  # Assuming user has a department field
+            if hasattr(user, 'department') and user.department:
                 if user.department.code == 'ADMINISTRATION':
                     return redirect('dashboard')  # admin dashboard
                 else:
@@ -500,21 +601,19 @@ class LoginView(View):
             else:
                 # Handle users without department assignment
                 return redirect('user_dashboard')
-        else:
-            context = {
-                'form': YourLoginForm(request.POST),
-                'error': 'Invalid username or password',
-            }
-            return render(request, 'login.html', context)
+                
+        # If form is not valid, show error message
+        return render(request, 'registration/login.html', {
+            'form': form,
+            'error': 'Invalid username or password'
+        })
 
 
+@method_decorator(login_required, name='dispatch')
 class DashboardView(View):
     template_name = 'dashboard.html'
 
     def get(self, request):
-        if not request.user.is_authenticated:
-            return redirect('login')
-        
         # Determine accessible categories based on user's department
         if request.user.is_staff or request.user.department == 'ADMINISTRATION':
             categories = Category.objects.all()
@@ -804,14 +903,15 @@ def delete_file(request, file_id):
 
 @login_required
 @require_http_methods(["GET"])
+@login_required
 def get_user_profile(request):
     """API endpoint to get current user's profile and permissions"""
     try:
         profile = {
             'role': 'admin' if request.user.is_staff else 'user',
-            'department': request.user.get_department_display(),
-            'department_code': request.user.department,
-            'allowed_categories': ['all'] if request.user.is_staff else [request.user.get_department_display()]
+            'department': request.user.department.name if request.user.department else None,
+            'department_code': request.user.department.code if request.user.department else None,
+            'allowed_categories': ['all'] if request.user.is_staff else [cat.name for cat in request.user.department.categories.all()] if request.user.department else []
         }
         
         return JsonResponse({'userProfile': profile})
@@ -835,13 +935,23 @@ class UserManagementView(View):
         users = User.objects.all().select_related('department')
         
         for user in users:
-            latest_session = user.sessions.order_by('-login_time').first()
-            login_time = localtime(latest_session.login_time).strftime("%d/%m/%Y %H:%M") if latest_session else "Never"
-            logout_time = (
-                localtime(latest_session.logout_time).strftime("%d/%m/%Y %H:%M")
-                if latest_session and latest_session.logout_time
-                else "Still Logged In" if latest_session else "N/A"
-            )
+            try:
+                latest_session = user.sessions.select_related('user').order_by('-login_time').first()
+                if latest_session:
+                    login_time = localtime(latest_session.login_time).strftime("%d/%m/%Y %H:%M")
+                    logout_time = (
+                        localtime(latest_session.logout_time).strftime("%d/%m/%Y %H:%M")
+                        if latest_session.logout_time
+                        else "Still Logged In"
+                    )
+                else:
+                    last_login = user.last_login
+                    login_time = localtime(last_login).strftime("%d/%m/%Y %H:%M") if last_login else "Never"
+                    logout_time = "N/A"
+            except Exception as e:
+                print(f"Error getting session for user {user.username}: {str(e)}")
+                login_time = localtime(user.last_login).strftime("%d/%m/%Y %H:%M") if user.last_login else "Never"
+                logout_time = "N/A"
             
             users_data.append({
                 "username": user.username,
@@ -1063,6 +1173,7 @@ def user_dashboard(request):
             for category in categories
         ]
         
+        
         # Get recent uploads (limited to 10)
         recent_uploads = medical_files.select_related('category', 'uploaded_by').order_by('-uploaded_at')[:10]
         
@@ -1076,6 +1187,7 @@ def user_dashboard(request):
             'user_department': user_department,
             'department_name': department_name,
             'medical_files': medical_files,
+            'categories': Category.objects.filter(department=request.user.department),
         }
         
         return render(request, 'user_dashboard.html', context)
@@ -1088,25 +1200,121 @@ def user_dashboard(request):
 
 @login_required
 def user_browser(request, year=None, month=None, day=None):
-    """
-    Hierarchical browser for medical files: Years → Months → Days → Files
-    Now department-aware and using MedicalFile model
-    """
+    context = {
+        'department_name': request.user.department.name if request.user.department else 'All Departments'
+    }
+    
+    if year is None:
+        # Show years view
+        years_data = (
+            YearFolder.objects
+            .filter(category__department=request.user.department)
+            .values('year')
+            .annotate(file_count=Count('month_folders__date_folders__medical_files'))
+            .order_by('-year')
+        )
+        context.update({
+            'view_type': 'years',
+            'years_data': years_data
+        })
+        
+    elif month is None:
+        # Show months for selected year
+        current_year = year
+        months_data = (
+            MonthFolder.objects
+            .filter(
+                year_folder__year=year,
+                year_folder__category__department=request.user.department
+            )
+            .values('month')
+            .annotate(
+                file_count=Count('date_folders__medical_files'),
+                month_name=Case(
+                    *[When(month=i, then=Value(datetime(2000, i, 1).strftime('%B'))) for i in range(1, 13)],
+                    output_field=CharField(),
+                )
+            )
+            .order_by('month')
+        )
+        context.update({
+            'view_type': 'months',
+            'current_year': year,
+            'months_data': months_data
+        })
+        
+    elif day is None:
+        # Show days for selected year and month
+        days_data = (
+            DateFolder.objects
+            .filter(
+                month_folder__month=month,
+                month_folder__year_folder__year=year,
+                month_folder__year_folder__category__department=request.user.department
+            )
+            .values('date')
+            .annotate(
+                file_count=Count('medical_files'),
+                day=F('date')
+            )
+            .order_by('date')
+        )
+        context.update({
+            'view_type': 'days',
+            'current_year': year,
+            'current_month': month,
+            'month_name': datetime(2000, month, 1).strftime('%B'),
+            'days_data': days_data
+        })
+        
+    else:
+        # Show files for selected date
+        files = (
+            MedicalFile.objects
+            .filter(
+                date_folder__date=day,
+                date_folder__month_folder__month=month,
+                date_folder__month_folder__year_folder__year=year,
+                date_folder__month_folder__year_folder__category__department=request.user.department
+            )
+            .select_related('uploaded_by')
+        )
+        context.update({
+            'view_type': 'files',
+            'current_year': year,
+            'current_month': month,
+            'current_day': day,
+            'month_name': datetime(2000, month, 1).strftime('%B'),
+            'selected_date': f"{datetime(2000, month, 1).strftime('%B')} {day}, {year}",
+            'files': files
+        })
+    
+    return render(request, 'user_browser.html', context)
     user = request.user
     user_department = getattr(user, 'department', None)
     
-    # Get base queryset filtered by user's department
+    category_id = request.GET.get('category', None)
+    selected_category = None
+    
     if user_department:
         base_files = MedicalFile.objects.filter(category__department=user_department)
+        if category_id:
+            base_files = base_files.filter(category_id=category_id)
+            try:
+                selected_category = Category.objects.get(id=category_id)
+            except Category.DoesNotExist:
+                selected_category = None
     else:
         base_files = MedicalFile.objects.none()
-    
+
     context = {
         'current_year': year,
         'current_month': month,
         'current_day': day,
-        'breadcrumbs': [],
+        'month_name': month_name if 'month_name' in locals() else None,
+        'breadcrumbs': [{'name': 'Home', 'url': 'user_dashboard'}],
         'department_name': user_department.name if user_department else "All Departments",
+        'selected_category': selected_category,
     }
     
     # Build breadcrumbs

@@ -112,6 +112,11 @@ CELERY_RESULT_SERIALIZER = 'json'
 TIME_ZONE = 'UTC'
 CELERY_TIMEZONE = TIME_ZONE
 
+# Authentication settings
+LOGIN_URL = '/login/'
+LOGOUT_URL = '/logout/'
+LOGIN_REDIRECT_URL = '/dashboard/'
+
 # Caching for better performance
 CACHES = {
     'default': {

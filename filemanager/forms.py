@@ -1,7 +1,7 @@
 # forms.py
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import FileDocument, FileFolder, FileCategory
+from .models import MedicalFile, Category, DateFolder
 
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
@@ -20,7 +20,24 @@ class MultipleFileField(forms.FileField):
         return result
 
 class FileUploadForm(forms.Form):
+    ALLOWED_CONTENT_TYPES = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain',
+        'text/csv',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'video/mp4',
+        'audio/mpeg',
+        'application/zip'
+    ]
+
     files = MultipleFileField(
+        required=True,
         widget=MultipleFileInput(attrs={
             'class': 'form-control',
             'accept': '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.mp4,.mp3,.zip'
@@ -46,15 +63,15 @@ class FileUploadForm(forms.Form):
         })
     )
     
-    folder = forms.ModelChoiceField(
-        queryset=FileFolder.objects.none(),
+    date_folder = forms.ModelChoiceField(
+        queryset=DateFolder.objects.none(),
         required=False,
-        empty_label="Root folder",
+        empty_label="Select date folder",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
     category = forms.ModelChoiceField(
-        queryset=FileCategory.objects.all(),
+        queryset=Category.objects.all(),
         required=False,
         empty_label="No category",
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -75,8 +92,27 @@ class FileUploadForm(forms.Form):
         super().__init__(*args, **kwargs)
         
         if user:
-            self.fields['folder'].queryset = FileFolder.objects.filter(owner=user)
+            # Filter date folders by user's department through category
+            if user.department:
+                self.fields['date_folder'].queryset = DateFolder.objects.filter(
+                    month_folder__year_folder__category__department=user.department
+                )
     
+    def clean_files(self):
+        files = self.cleaned_data.get('files')
+        if not files:
+            raise ValidationError("You must select at least one file to upload.")
+            
+        if isinstance(files, list):
+            for file in files:
+                if file.content_type not in self.ALLOWED_CONTENT_TYPES:
+                    raise ValidationError(f"File type {file.content_type} is not allowed.")
+        else:
+            if files.content_type not in self.ALLOWED_CONTENT_TYPES:
+                raise ValidationError(f"File type {files.content_type} is not allowed.")
+                
+        return files
+        
     def clean_tags(self):
         tags = self.cleaned_data.get('tags', '')
         if tags:
@@ -89,14 +125,16 @@ class FileUploadForm(forms.Form):
 
 class FolderForm(forms.ModelForm):
     class Meta:
-        model = FileFolder
-        fields = ['name', 'parent']
+        model = DateFolder
+        fields = ['date', 'month_folder']
         widgets = {
-            'name': forms.TextInput(attrs={
+            'date': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Folder name'
+                'placeholder': 'Day of month (1-31)',
+                'min': 1,
+                'max': 31
             }),
-            'parent': forms.Select(attrs={
+            'month_folder': forms.Select(attrs={
                 'class': 'form-control'
             })
         }
@@ -106,32 +144,34 @@ class FolderForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         if user:
-            self.fields['parent'].queryset = FileFolder.objects.filter(owner=user)
-            self.fields['parent'].empty_label = "Root folder"
+            self.fields['month_folder'].empty_label = "Select month folder"
     
-    def clean_name(self):
-        name = self.cleaned_data['name']
-        parent = self.cleaned_data.get('parent')
+    def clean_date(self):
+        date = self.cleaned_data['date']
+        month_folder = self.cleaned_data.get('month_folder')
         
-        # Check for duplicate folder names in the same parent
-        existing = FileFolder.objects.filter(
-            name=name,
-            parent=parent,
-            owner=self.instance.owner if self.instance.pk else None
-        )
+        if date < 1 or date > 31:
+            raise ValidationError("Date must be between 1 and 31")
+            
+        # Check for duplicate date in the same month folder
+        if month_folder:
+            existing = DateFolder.objects.filter(
+                date=date,
+                month_folder=month_folder
+            )
+            
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise ValidationError("A folder for this date already exists in the selected month")
         
-        if self.instance.pk:
-            existing = existing.exclude(pk=self.instance.pk)
-        
-        if existing.exists():
-            raise ValidationError("A folder with this name already exists in the selected location")
-        
-        return name
+        return date
 
 class FileEditForm(forms.ModelForm):
     class Meta:
-        model = FileDocument
-        fields = ['name', 'description', 'folder', 'category', 'tags']
+        model = MedicalFile
+        fields = ['name', 'description', 'date_folder', 'category', 'file_type']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control'
@@ -156,8 +196,8 @@ class FileEditForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         
         if user:
-            self.fields['folder'].queryset = FileFolder.objects.filter(owner=user)
-            self.fields['folder'].empty_label = "Root folder"
+            self.fields['date_folder'].queryset = DateFolder.objects.all()
+            self.fields['date_folder'].empty_label = "Select date folder"
 
 class FileSearchForm(forms.Form):
     query = forms.CharField(
@@ -169,14 +209,14 @@ class FileSearchForm(forms.Form):
     )
     
     category = forms.ModelChoiceField(
-        queryset=FileCategory.objects.all(),
+        queryset=Category.objects.all(),
         required=False,
         empty_label="All categories",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
-    folder = forms.ModelChoiceField(
-        queryset=FileFolder.objects.none(),
+    date_folder = forms.ModelChoiceField(
+        queryset=DateFolder.objects.all(),
         required=False,
         empty_label="All folders",
         widget=forms.Select(attrs={'class': 'form-control'})
@@ -201,4 +241,8 @@ class FileSearchForm(forms.Form):
         super().__init__(*args, **kwargs)
         
         if user:
-            self.fields['folder'].queryset = FileFolder.objects.filter(owner=user)
+            # Filter date folders by user's department
+            if user.department:
+                self.fields['date_folder'].queryset = DateFolder.objects.filter(
+                    month_folder__year_folder__category__department=user.department
+                )

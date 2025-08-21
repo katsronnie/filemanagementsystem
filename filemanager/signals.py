@@ -29,15 +29,41 @@ def create_folders_for_new_category(sender, instance, created, **kwargs):
 
 @receiver(user_logged_in)
 def on_user_logged_in(sender, request, user, **kwargs):
-    # Create a new session record on login
-    UserSession.objects.create(user=user)
+    """Record user login with current server time"""
+    try:
+        # Close any existing active sessions for this user
+        UserSession.objects.filter(
+            user=user,
+            logout_time__isnull=True
+        ).update(logout_time=timezone.now())
+        
+        # Create new session with current time
+        current_time = timezone.now()
+        session = UserSession.objects.create(
+            user=user,
+            login_time=current_time
+        )
+        print(f"User {user.username} logged in at {current_time}")
+    except Exception as e:
+        print(f"Error recording login for {user.username}: {str(e)}")
 
 @receiver(user_logged_out)
 def on_user_logged_out(sender, request, user, **kwargs):
+    """Record user logout with current server time"""
     if not user.is_authenticated:
         return
-    # Find the latest session without logout_time and update it
-    session = UserSession.objects.filter(user=user, logout_time__isnull=True).order_by('-login_time').first()
-    if session:
-        session.logout_time = timezone.now()
-        session.save()
+        
+    try:
+        # Update all active sessions for this user
+        current_time = timezone.now()
+        updated = UserSession.objects.filter(
+            user=user,
+            logout_time__isnull=True
+        ).update(logout_time=current_time)
+        
+        if updated:
+            print(f"User {user.username} logged out at {current_time}")
+        else:
+            print(f"No active session found for user {user.username}")
+    except Exception as e:
+        print(f"Error recording logout for {user.username}: {str(e)}")

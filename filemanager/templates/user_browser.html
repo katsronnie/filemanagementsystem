@@ -1,299 +1,13 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neonatal File Browser - MedFile</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: white;
-            min-height: 100vh;
-            color: #333;
-        }
-
-        /* Navigation Bar */
-        .navbar {
-            background: #1e3a8a;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 20px rgba(30, 58, 138, 0.3);
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: white;
-        }
-
-        .logo-icon {
-            font-size: 2rem;
-        }
-
-        .logo span:last-child {
-            font-size: 0.875rem;
-            opacity: 0.7;
-            font-weight: 400;
-            margin-left: 0.5rem;
-        }
-
-        .user-section {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .user-badge {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        /* Header */
-        .header {
-            margin-bottom: 2rem;
-            color: #1e293b;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-
-        .header p {
-            opacity: 0.7;
-            font-size: 1.125rem;
-        }
-
-        /* Breadcrumbs */
-        .breadcrumbs {
-            background: #f8fafc;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-            border: 1px solid #e2e8f0;
-        }
-
-        .breadcrumb-item {
-            display: inline-block;
-            color: #64748b;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .breadcrumb-item:hover {
-            color: #1e3a8a;
-        }
-
-        .breadcrumb-item.active {
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .breadcrumb-separator {
-            margin: 0 0.5rem;
-            color: #cbd5e1;
-        }
-
-        /* Back Button */
-        .back-btn {
-            background: #f1f5f9;
-            color: #475569;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background: #e2e8f0;
-            transform: translateY(-2px);
-        }
-
-        /* Folder Grid */
-        .folder-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .folder-item {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-        }
-
-        .folder-item:hover {
-            border-color: #1e3a8a;
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(30, 58, 138, 0.15);
-        }
-
-        .folder-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-
-        .folder-name {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 0.5rem;
-        }
-
-        .folder-count {
-            color: #64748b;
-            font-size: 0.875rem;
-        }
-
-        /* Files Table */
-        .files-table {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-        }
-
-        .files-table table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .files-table th {
-            background: #f8fafc;
-            padding: 1rem 1.5rem;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .files-table td {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #f3f4f6;
-        }
-
-        .files-table tr:hover {
-            background: #f9fafb;
-        }
-
-        .file-icon {
-            font-size: 1.5rem;
-            margin-right: 0.5rem;
-        }
-
-        .file-name {
-            font-weight: 500;
-            color: #1e293b;
-        }
-
-        .file-size {
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        .file-date {
-            color: #6b7280;
-            font-size: 0.875rem;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            color: #64748b;
-        }
-
-        .empty-icon {
-            font-size: 4rem;
-            opacity: 0.5;
-            margin-bottom: 1rem;
-        }
-
-        .empty-text {
-            font-size: 1.125rem;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .folder-grid {
-                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                gap: 1rem;
-            }
-
-            .folder-item {
-                padding: 1.5rem;
-            }
-
-            .folder-icon {
-                font-size: 3rem;
-            }
-
-            .files-table {
-                overflow-x: auto;
-            }
-        }
-    </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ department_name }} File Browser - MedFile</title>
+    <link rel="stylesheet" href="{% static 'css/browser.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile_dialog.css' %}">
+    <script src="{% static 'js/profile_dialog.js' %}"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -304,8 +18,40 @@
             <span>File Management System</span>
         </div>
         <div class="user-section">
-            <div class="user-badge">NEONATAL</div>
-            <div class="user-avatar">U</div>
+            <div class="user-badge">{{ department_name|upper }}</div>
+            <div class="user-avatar" onclick="toggleProfileDialog()">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+            
+            <!-- Mini Profile Dialog -->
+            <div id="profileDialog" class="profile-dialog">
+                <div class="profile-content">
+                    <div class="profile-header">
+                        <div class="large-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+                        <div class="user-info">
+                            <div class="full-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="username">@{{ request.user.username }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <span class="label">Department:</span>
+                            <span class="value">{{ request.user.department }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Login Status:</span>
+                            <span class="value status-active">Active</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Last Login:</span>
+                            <span class="value">{{ request.user.last_login|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="{% url 'login' %}" class="logout-btn" onclick="handleLogout(event)">
+                            <span class="icon">🚪</span> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -313,292 +59,148 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>Neonatal File Browser</h1>
-            <p id="headerDescription">Navigate through files by year, month, and date</p>
+            <h1>{{ department_name }} File Browser</h1>
+            <p id="headerDescription">
+                {% if view_type == 'years' %}Navigate through files by year, month, and date{% endif %}
+                {% if view_type == 'months' %}Files from {{ current_year }}{% endif %}
+                {% if view_type == 'days' %}Files from {{ month_name }} {{ current_year }}{% endif %}
+                {% if view_type == 'files' %}Files from {{ selected_date }}{% endif %}
+            </p>
         </div>
 
+        
         <!-- Breadcrumbs -->
-        <div class="breadcrumbs">
-            <a href="#" class="breadcrumb-item" onclick="goToYears()">📂 Neonatal</a>
-            <span class="breadcrumb-separator">›</span>
-            <span id="breadcrumbPath" class="breadcrumb-item active">All Years</span>
+        <div class="breadcrumbs" aria-label="Breadcrumb navigation">
+            <a href="{% url 'user_browser' %}" class="breadcrumb-item{% if not current_year %} active{% endif %}">
+                {{ department_name }}
+            </a>
+            {% if current_year %}
+                <span class="breadcrumb-separator">›</span>
+                <a href="{% url 'user_browser_year' year=current_year %}" class="breadcrumb-item{% if not current_month %} active{% endif %}">
+                    {{ current_year }}
+                </a>
+            {% endif %}
+            {% if current_month %}
+                <span class="breadcrumb-separator">›</span>
+                <a href="{% url 'user_browser_month' year=current_year month=current_month %}" class="breadcrumb-item{% if not current_day %} active{% endif %}">
+                    {{ month_name }}
+                </a>
+            {% endif %}
+            {% if current_day %}
+                <span class="breadcrumb-separator">›</span>
+                <span class="breadcrumb-item active">{{ current_day }}</span>
+            {% endif %}
         </div>
 
-        <!-- Back Button (hidden initially) -->
-        <a href="#" class="back-btn" id="backBtn" style="display: none;" onclick="goBack()">
+        <!-- Back Button -->
+        <button class="back-btn" onclick="window.history.back()" aria-label="Go back">
             ← Back
-        </a>
+        </button>
 
         <!-- Content Area -->
         <div id="contentArea">
+            
             <!-- Years View -->
-            <div id="yearsView" class="folder-grid">
-                <!-- Years will be populated by JavaScript -->
-            </div>
+            {% if view_type == 'years' %}
+                <div class="folder-grid">
+                    {% for year in years_data %}
+                        <a href="{% url 'user_browser_year' year=year.year %}" class="folder-item">
+                            <span class="folder-icon">📅</span>
+                            <div class="folder-name">{{ year.year }}</div>
+                            <div class="folder-count">{{ year.file_count }} files</div>
+                        </a>
+                    {% empty %}
+                        <div class="empty-state">
+                            <div class="empty-icon">📁</div>
+                            <div class="empty-text">No files found</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
             <!-- Months View -->
-            <div id="monthsView" class="folder-grid" style="display: none;">
-                <!-- Months will be populated by JavaScript -->
-            </div>
+            {% if view_type == 'months' %}
+                <div class="folder-grid">
+                    {% for month in months_data %}
+                        <a href="{% url 'user_browser_month' year=current_year month=month.month %}" class="folder-item">
+                            <span class="folder-icon">📆</span>
+                            <div class="folder-name">{{ month.month_name }}</div>
+                            <div class="folder-count">{{ month.file_count }} files</div>
+                        </a>
+                    {% empty %}
+                        <div class="empty-state">
+                            <div class="empty-icon">📁</div>
+                            <div class="empty-text">No files found for {{ current_year }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
             <!-- Days View -->
-            <div id="daysView" class="folder-grid" style="display: none;">
-                <!-- Days will be populated by JavaScript -->
-            </div>
-
-            <!-- Files View -->
-            <div id="filesView" style="display: none;">
-                <div class="files-table">
-                    <table id="filesTable">
-                        <thead>
-                            <tr>
-                                <th>File Name</th>
-                                <th>Size</th>
-                                <th>Upload Date</th>
-                                <th>Uploaded By</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Files will be populated by JavaScript -->
-                        </tbody>
-                    </table>
+            {% if view_type == 'days' %}
+                <div class="folder-grid">
+                    {% for day in days_data %}
+                        <a href="{% url 'user_browser_day' year=current_year month=current_month day=day.day %}" class="folder-item">
+                            <span class="folder-icon">📋</span>
+                            <div class="folder-name">Day {{ day.day }}</div>
+                            <div class="folder-count">{{ day.file_count }} files</div>
+                        </a>
+                    {% empty %}
+                        <div class="empty-state">
+                            <div class="empty-icon">📁</div>
+                            <div class="empty-text">No files found for {{ month_name }} {{ current_year }}</div>
+                        </div>
+                    {% endfor %}
                 </div>
-            </div>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="empty-state" style="display: none;">
-                <div class="empty-icon">📁</div>
-                <div class="empty-text">No files found for this selection</div>
-            </div>
+            {% endif %}
+            <!-- Files View -->
+            {% if view_type == 'files' %}
+                {% if files %}
+                    <div class="files-table">
+                        <table id="filesTable" aria-label="Files Table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Size</th>
+                                    <th>Upload Date</th>
+                                    <th>Uploaded By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                    <tr>
+                                        <td>
+                                            <span class="file-icon">
+                                                {% if file.file_type == 'PDF' %}📄{% endif %}
+                                                {% if file.file_type == 'DOC' %}📝{% endif %}
+                                                {% if file.file_type == 'XLS' %}📊{% endif %}
+                                                {% if file.file_type == 'IMG' %}🖼️{% endif %}
+                                                {% if file.file_type == 'VID' %}🎬{% endif %}
+                                                {% if file.file_type == 'AUD' %}🎵{% endif %}
+                                                {% if file.file_type == 'OTH' %}📁{% endif %}
+                                            </span>
+                                            <span class="file-name">
+                                                <a href="{{ file.file.url }}" target="_blank">{{ file.name }}</a>
+                                            </span>
+                                        </td>
+                                        <td class="file-size">{{ file.size|filesizeformat }}</td>
+                                        <td class="file-date">{{ file.uploaded_at|date:"M d, Y H:i" }}</td>
+                                        <td>{{ file.uploaded_by.get_full_name|default:file.uploaded_by.username }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">📁</div>
+                        <div class="empty-text">No files found for {{ selected_date }}</div>
+                    </div>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 
-    <script>
-        // Sample data structure - replace with actual data from your Django view
-        const sampleData = {
-            years: [
-                { year: 2023, file_count: 45 },
-                { year: 2022, file_count: 67 },
-                { year: 2021, file_count: 32 },
-                { year: 2020, file_count: 28 },
-                { year: 2019, file_count: 51 }
-            ],
-            months: {
-                2023: [
-                    { month: 12, name: 'December', file_count: 8 },
-                    { month: 11, name: 'November', file_count: 12 },
-                    { month: 10, name: 'October', file_count: 15 },
-                    { month: 9, name: 'September', file_count: 10 }
-                ]
-            },
-            days: {
-                '2023-12': [
-                    { day: 15, file_count: 3 },
-                    { day: 12, file_count: 2 },
-                    { day: 8, file_count: 3 }
-                ]
-            },
-            files: {
-                '2023-12-15': [
-                    { name: 'Patient_Record_001.pdf', size: '2.3 MB', date: 'Dec 15, 2023 14:30', uploaded_by: 'Dr. Smith' },
-                    { name: 'Neonatal_Assessment.docx', size: '856 KB', date: 'Dec 15, 2023 10:15', uploaded_by: 'Nurse Johnson' },
-                    { name: 'Lab_Results_456.pdf', size: '1.1 MB', date: 'Dec 15, 2023 09:45', uploaded_by: 'Lab Tech' }
-                ]
-            }
-        };
-
-        let currentView = 'years';
-        let currentYear = null;
-        let currentMonth = null;
-        let navigation = [];
-
-        // Initialize the view
-        function init() {
-            showYears();
-        }
-
-        function showYears() {
-            currentView = 'years';
-            currentYear = null;
-            currentMonth = null;
-            navigation = [];
-
-            document.getElementById('headerDescription').textContent = 'Navigate through files by year, month, and date';
-            document.getElementById('breadcrumbPath').textContent = 'All Years';
-            document.getElementById('backBtn').style.display = 'none';
-
-            hideAllViews();
-            document.getElementById('yearsView').style.display = 'grid';
-
-            const yearsContainer = document.getElementById('yearsView');
-            yearsContainer.innerHTML = '';
-
-            sampleData.years.forEach(yearData => {
-                const yearElement = createFolderElement(
-                    '📅',
-                    yearData.year.toString(),
-                    `${yearData.file_count} files`,
-                    () => showMonths(yearData.year)
-                );
-                yearsContainer.appendChild(yearElement);
-            });
-        }
-
-        function showMonths(year) {
-            currentView = 'months';
-            currentYear = year;
-            navigation.push({ view: 'years', label: 'All Years' });
-
-            document.getElementById('headerDescription').textContent = `Files from ${year}`;
-            document.getElementById('breadcrumbPath').textContent = `${year}`;
-            document.getElementById('backBtn').style.display = 'inline-flex';
-
-            hideAllViews();
-            document.getElementById('monthsView').style.display = 'grid';
-
-            const monthsContainer = document.getElementById('monthsView');
-            monthsContainer.innerHTML = '';
-
-            const monthsData = sampleData.months[year] || [];
-            
-            if (monthsData.length === 0) {
-                showEmptyState();
-                return;
-            }
-
-            monthsData.forEach(monthData => {
-                const monthElement = createFolderElement(
-                    '📆',
-                    monthData.name,
-                    `${monthData.file_count} files`,
-                    () => showDays(year, monthData.month, monthData.name)
-                );
-                monthsContainer.appendChild(monthElement);
-            });
-        }
-
-        function showDays(year, month, monthName) {
-            currentView = 'days';
-            currentMonth = month;
-            navigation.push({ view: 'months', label: year.toString() });
-
-            document.getElementById('headerDescription').textContent = `Files from ${monthName} ${year}`;
-            document.getElementById('breadcrumbPath').textContent = `${year} › ${monthName}`;
-
-            hideAllViews();
-            document.getElementById('daysView').style.display = 'grid';
-
-            const daysContainer = document.getElementById('daysView');
-            daysContainer.innerHTML = '';
-
-            const daysData = sampleData.days[`${year}-${month}`] || [];
-            
-            if (daysData.length === 0) {
-                showEmptyState();
-                return;
-            }
-
-            daysData.forEach(dayData => {
-                const dayElement = createFolderElement(
-                    '📋',
-                    `Day ${dayData.day}`,
-                    `${dayData.file_count} files`,
-                    () => showFiles(year, month, dayData.day, monthName)
-                );
-                daysContainer.appendChild(dayElement);
-            });
-        }
-
-        function showFiles(year, month, day, monthName) {
-            currentView = 'files';
-            navigation.push({ view: 'days', label: `${monthName}` });
-
-            document.getElementById('headerDescription').textContent = `Files from ${monthName} ${day}, ${year}`;
-            document.getElementById('breadcrumbPath').textContent = `${year} › ${monthName} › ${day}`;
-
-            hideAllViews();
-            document.getElementById('filesView').style.display = 'block';
-
-            const filesData = sampleData.files[`${year}-${month}-${day}`] || [];
-            
-            if (filesData.length === 0) {
-                showEmptyState();
-                return;
-            }
-
-            const tbody = document.querySelector('#filesTable tbody');
-            tbody.innerHTML = '';
-
-            filesData.forEach(file => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <span class="file-icon">📄</span>
-                        <span class="file-name">${file.name}</span>
-                    </td>
-                    <td class="file-size">${file.size}</td>
-                    <td class="file-date">${file.date}</td>
-                    <td>${file.uploaded_by}</td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        function createFolderElement(icon, name, count, clickHandler) {
-            const element = document.createElement('a');
-            element.href = '#';
-            element.className = 'folder-item';
-            element.onclick = (e) => {
-                e.preventDefault();
-                clickHandler();
-            };
-            
-            element.innerHTML = `
-                <span class="folder-icon">${icon}</span>
-                <div class="folder-name">${name}</div>
-                <div class="folder-count">${count}</div>
-            `;
-            
-            return element;
-        }
-
-        function hideAllViews() {
-            document.getElementById('yearsView').style.display = 'none';
-            document.getElementById('monthsView').style.display = 'none';
-            document.getElementById('daysView').style.display = 'none';
-            document.getElementById('filesView').style.display = 'none';
-            document.getElementById('emptyState').style.display = 'none';
-        }
-
-        function showEmptyState() {
-            hideAllViews();
-            document.getElementById('emptyState').style.display = 'block';
-        }
-
-        function goBack() {
-            if (navigation.length === 0) return;
-            
-            const previous = navigation.pop();
-            
-            switch (previous.view) {
-                case 'years':
-                    showYears();
-                    break;
-                case 'months':
-                    showMonths(currentYear);
-                    break;
-                case 'days':
-                    showDays(currentYear, currentMonth, previous.label);
-                    break;
-            }
-        }
-
-        function goToYears() {
-            showYears();
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+    <script src="{% static 'js/browser.js' %}"></script>
 </body>
 </html>

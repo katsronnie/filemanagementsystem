@@ -1,9 +1,12 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedFile - File Management System</title>
+    <link rel="stylesheet" href="{% static 'css/profile_dialog.css' %}">
+    <script src="{% static 'js/profile_dialog.js' %}"></script>
     <style>
         * {
             margin: 0;
@@ -157,6 +160,59 @@
             border-bottom: 2px solid #e5e7eb;
             margin-bottom: 2rem;
             gap: 2rem;
+        }
+        /* Navigation Bar */
+        .navbar {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(30, 58, 138, 0.1);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-badge {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
         }
 
         .nav-tab {
@@ -511,6 +567,7 @@
                 width: 100%;
             }
         }
+
     </style>
 </head>
 <body>
@@ -524,8 +581,41 @@
             <div class="navbar-subtitle">File Management System</div>
         </div>
         <div class="navbar-right">
-            <div class="admin-badge">Administrator</div>
-            <div class="user-avatar">D</div>
+            <div class="user-badge">{{ request.user.department }}</div>
+            <div class="user-avatar" onclick="toggleProfileDialog()">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+            
+            <!-- Mini Profile Dialog -->
+            <div id="profileDialog" class="profile-dialog">
+                <div class="profile-content">
+                    <div class="profile-header">
+                        <div class="large-avatar">{{ request.user.first_name|first|default:request.user.username|first }}</div>
+                        <div class="user-info">
+                            <div class="full-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="username">@{{ request.user.username }}</div>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <span class="label">Department:</span>
+                            <span class="value">{{ request.user.department }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Login Status:</span>
+                            <span class="value status-active">Active</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label">Last Login:</span>
+                            <span class="value">{{ request.user.last_login|date:"M d, Y H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <a href="{% url 'login' %}" class="logout-btn" onclick="handleLogout(event)">
+                            <span class="icon">🚪</span> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
     </nav>
 

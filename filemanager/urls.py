@@ -31,10 +31,11 @@ urlpatterns = [
     path('get_scanners/', views.get_scanners, name='get_scanners'),
     path('scan_document/', views.scan_document, name='scan_document'),
     path('user_dashboard/', views.user_dashboard, name='user_dashboard'),
-    path('user_browser/', views.user_browser, name='user_browser'),
-    path('user_browser/<int:year>/', views.user_browser, name='user_browser_year'),
-    path('user_browser/<int:year>/<int:month>/', views.user_browser, name='user_browser_month'),
+    # User browser paths - from most specific to least specific
     path('user_browser/<int:year>/<int:month>/<int:day>/', views.user_browser, name='user_browser_day'),
+    path('user_browser/<int:year>/<int:month>/', views.user_browser, name='user_browser_month'),
+    path('user_browser/<int:year>/', views.user_browser, name='user_browser_year'),
+    path('user_browser/', views.user_browser, name='user_browser'),
     
     
     # API Endpoints
@@ -45,4 +46,5 @@ urlpatterns = [
     path('api/user/profile/', get_user_profile, name='get_user_profile'),
     path('api/users/add/', add_user_api, name='add_user_api'),
     path('api/dashboard-stats/', dashboard_stats, name='dashboard_stats'),
+    path('api/search-files/', views.search_files, name='search_files'),
 ]
